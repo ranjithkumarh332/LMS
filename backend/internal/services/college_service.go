@@ -7,7 +7,7 @@ import (
 	"github.com/eip/backend/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type CollegeService struct{}
@@ -18,7 +18,7 @@ func NewCollegeService() *CollegeService {
 
 func (s *CollegeService) GetAll(ctx context.Context, filter bson.M, page, limit int) ([]*models.College, int64, error) {
 	col := database.GetCollection(database.CollectionColleges)
-	opts := (& mongo.Options.FindOptions{}).SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
+	opts := options.Find().SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := col.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, 0, err

@@ -8,7 +8,7 @@ import (
 	"github.com/eip/backend/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type QuizService struct{}
@@ -19,7 +19,7 @@ func NewQuizService() *QuizService {
 
 func (s *QuizService) GetAll(ctx context.Context, filter bson.M, page, limit int) ([]*models.AssessmentTemplate, int64, error) {
 	col := database.GetCollection(database.CollectionAssessments)
-	opts := (&mongo.FindOptions{}).SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
+	opts := options.Find().SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := col.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, 0, err

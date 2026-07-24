@@ -8,7 +8,7 @@ import (
 	"github.com/eip/backend/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type WorkshopService struct{}
@@ -19,7 +19,7 @@ func NewWorkshopService() *WorkshopService {
 
 func (s *WorkshopService) GetAll(ctx context.Context, filter bson.M, page, limit int) ([]*models.Workshop, int64, error) {
 	col := database.GetCollection(database.CollectionWorkshops)
-	opts := (&mongo.FindOptions{}).SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "scheduled_at", Value: 1}})
+	opts := options.Find().SetSkip(int64((page-1)*limit)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "scheduled_at", Value: 1}})
 	cursor, err := col.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, 0, err
