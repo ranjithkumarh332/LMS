@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trainer Dashboard — Employability Intelligence Platform</title>
+<meta name="description" content="Trainer dashboard for the Employability Intelligence Platform.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   0. DESIGN TOKENS — copied verbatim from Login.html
+============================================================ */
+:root{
+  --ink:#0F172A;
+  --ink-soft:#64748B;
+  --paper:#FFFCF8;
+  --paper-raised:#FFFFFF;
+  --line:#F3F4F6;
+  --amber:#F59E0B;
+  --amber-dark:#EA580C;
+  --teal:#FB923C;
+  --teal-dark:#C2410C;
+  --rose:#E4573D;
+  --text:#0F172A;
+  --text-soft:#64748B;
+  --radius-sm:10px;
+  --radius-md:18px;
+  --radius-lg:24px;
+  --shadow-sm: 0 2px 10px rgba(15,23,42,0.05);
+  --shadow-md: 0 12px 32px rgba(15,23,42,0.08);
+  --shadow-lg: 0 24px 64px rgba(15,23,42,0.14);
+  --shadow-glow: 0 12px 28px rgba(245,158,11,0.22);
+  --font-display:'Fraunces', serif;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+  --maxw:1280px;
+  --transition: 0.35s cubic-bezier(.22,1,.36,1);
+  --sidebar-w: 260px;
+}
+
+[data-theme="dark"]{
+  --ink:#F5F1EA;
+  --ink-soft:#C7CCD6;
+  --paper:#15130F;
+  --paper-raised:#201C17;
+  --line:#332C22;
+  --text:#F5F1EA;
+  --text-soft:#B7ADA0;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-md: 0 12px 32px rgba(0,0,0,0.45);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,0.55);
+  --shadow-glow: 0 12px 28px rgba(245,158,11,0.28);
+}
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:var(--font-body);
+  background:var(--paper);
+  color:var(--text);
+  line-height:1.6;
+  transition: background var(--transition), color var(--transition);
+  min-height:100vh;
+}
+img{ max-width:100%; display:block; }
+a{ color:inherit; text-decoration:none; }
+ul{ list-style:none; }
+button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+input,select,textarea{ font-family:inherit; }
+h1,h2,h3,h4{ font-family:var(--font-display); font-weight:600; line-height:1.1; letter-spacing:-0.01em; }
+.eyebrow{
+  font-family:var(--font-mono); font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--teal-dark); display:inline-flex; align-items:center; gap:8px; margin-bottom:10px; font-weight:600;
+}
+[data-theme="dark"] .eyebrow{ color:var(--teal); }
+.eyebrow::before{ content:''; width:18px; height:1px; background:var(--teal-dark); }
+[data-theme="dark"] .eyebrow::before{ background:var(--teal); }
+
+::selection{ background:var(--amber); color:var(--ink); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+  outline:2px solid var(--teal); outline-offset:3px; border-radius:4px;
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ============================================================
+   LOADER
+============================================================ */
+#loader{
+  position:fixed; inset:0; background:var(--ink); z-index:9999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+[data-theme="dark"] #loader{ background:var(--paper); }
+#loader.hidden{ opacity:0; visibility:hidden; }
+.loader-mark{ width:52px; height:52px; border-radius:50%; border:2px solid rgba(255,252,248,0.2); border-top-color:var(--amber); animation: spin 0.9s linear infinite; }
+.loader-text{ font-family:var(--font-mono); font-size:12px; letter-spacing:0.16em; color:#FFFCF8; text-transform:uppercase; }
+[data-theme="dark"] .loader-text{ color:var(--ink); }
+
+/* ============================================================
+   1. APP SHELL
+============================================================ */
+.app-shell{ display:flex; min-height:100vh; }
+.brand{ display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:700; font-size:17px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg, var(--amber), var(--rose));
+  display:flex; align-items:center; justify-content:center; color:#1B1300; font-weight:800; font-size:15px; font-family:var(--font-mono);
+  box-shadow: var(--shadow-sm); flex-shrink:0;
+}
+
+/* ---- Sidebar ---- */
+.sidebar{
+  width:var(--sidebar-w); flex-shrink:0; background:var(--paper-raised); border-right:1px solid var(--line);
+  position:fixed; top:0; left:0; bottom:0; z-index:200; display:flex; flex-direction:column;
+  transition: transform var(--transition), background var(--transition);
+}
+.sidebar-head{ padding:22px 22px 18px; border-bottom:1px solid var(--line); }
+.sidebar-nav{ flex:1; overflow-y:auto; padding:16px 14px; }
+.nav-section-label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-soft); padding:14px 12px 8px; }
+.nav-item{
+  display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:var(--radius-sm); font-size:14px; font-weight:500;
+  color:var(--text-soft); margin-bottom:2px; transition: background var(--transition), color var(--transition);
+  cursor:pointer; position:relative;
+}
+.nav-item .nav-ic{ width:18px; text-align:center; flex-shrink:0; font-size:15px; }
+.nav-item:hover{ background:var(--paper); color:var(--text); }
+.nav-item.active{ background:linear-gradient(90deg, rgba(251,146,60,0.14), rgba(251,146,60,0.02)); color:var(--teal-dark); font-weight:600; }
+[data-theme="dark"] .nav-item.active{ color:var(--teal); }
+.nav-item.active::before{ content:''; position:absolute; left:-14px; top:8px; bottom:8px; width:3px; border-radius:4px; background:var(--teal); }
+.nav-badge{ margin-left:auto; font-family:var(--font-mono); font-size:10.5px; background:var(--amber); color:#1B1300; padding:2px 7px; border-radius:100px; font-weight:700; }
+
+.sidebar-foot{ padding:16px; border-top:1px solid var(--line); }
+.user-chip{ display:flex; align-items:center; gap:10px; padding:8px; border-radius:var(--radius-sm); transition: background var(--transition); }
+.user-chip:hover{ background:var(--paper); }
+.user-avatar{ width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+.user-meta{ flex:1; min-width:0; }
+.user-meta .u-name{ font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-meta .u-role{ font-size:11.5px; color:var(--text-soft); }
+
+/* ---- Main ---- */
+.main{ flex:1; margin-left:var(--sidebar-w); display:flex; flex-direction:column; min-width:0; }
+.topbar{
+  position:sticky; top:0; z-index:100; display:flex; align-items:center; gap:16px; padding:16px 32px;
+  background:rgba(255,252,248,0.82); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+  border-bottom:1px solid var(--line);
+}
+[data-theme="dark"] .topbar{ background:rgba(21,19,15,0.82); }
+.menu-toggle{ display:none; font-size:20px; }
+.hamburger{ width:18px; height:13px; position:relative; display:inline-block; flex-shrink:0; }
+.hamburger span{ position:absolute; left:0; width:100%; height:2px; border-radius:2px; background:var(--ink); transition: transform var(--transition), opacity var(--transition), top var(--transition), bottom var(--transition), background var(--transition); }
+.hamburger span:nth-child(1){ top:0; }
+.hamburger span:nth-child(2){ top:5.5px; }
+.hamburger span:nth-child(3){ bottom:0; }
+.menu-toggle.active .hamburger span:nth-child(1){ top:5.5px; transform:rotate(45deg); }
+.menu-toggle.active .hamburger span:nth-child(2){ opacity:0; }
+.menu-toggle.active .hamburger span:nth-child(3){ bottom:5.5px; transform:rotate(-45deg); }
+
+/* ---- Sidebar overlay (mobile/tablet nav backdrop) ---- */
+.sidebar-overlay{
+  position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  z-index:190; opacity:0; visibility:hidden; transition: opacity var(--transition), visibility var(--transition);
+}
+.sidebar-overlay.show{ opacity:1; visibility:visible; }
+@media (min-width:981px){ .sidebar-overlay{ display:none; } }
+body.nav-open{ overflow:hidden; }
+.page-title{ font-size:20px; margin-right:auto; }
+.page-title span{ display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-soft); font-weight:600; margin-bottom:2px; }
+.topbar-search{ position:relative; width:280px; }
+.topbar-search input{
+  width:100%; padding:10px 14px 10px 36px; font-size:13.5px; border:1.5px solid var(--line); border-radius:100px;
+  background:var(--paper-raised); color:var(--text); transition:border-color var(--transition), box-shadow var(--transition);
+}
+.topbar-search input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 4px rgba(251,146,60,0.14); }
+.topbar-search .s-ic{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-soft); font-size:13px; }
+.icon-btn{ width:38px; height:38px; border-radius:50%; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; background:var(--paper-raised); transition:transform var(--transition), background var(--transition); position:relative; flex-shrink:0; }
+.icon-btn:hover{ transform:rotate(8deg); background:var(--paper); }
+.icon-btn .dot{ position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%; background:var(--rose); border:1.5px solid var(--paper-raised); }
+
+.content{ padding:28px 32px 60px; max-width:1500px; width:100%; margin:0 auto; }
+.view{ display:none; animation: view-in 0.45s cubic-bezier(.22,1,.36,1); }
+.view.active{ display:block; }
+@keyframes view-in{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+/* ============================================================
+   2. CARDS / COMPONENTS
+============================================================ */
+.card{
+  background:var(--paper-raised); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition), background var(--transition);
+}
+.card:hover{ box-shadow:var(--shadow-glow); }
+.card-pad{ padding:22px; }
+.section-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+.section-head h3{ font-size:19px; }
+.section-head p{ color:var(--text-soft); font-size:13.5px; margin-top:4px; }
+
+.stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:28px; }
+.stat-card{ padding:20px; position:relative; overflow:hidden; }
+.stat-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-glow); }
+.stat-card .s-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.stat-ic{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.stat-card .s-label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-soft); font-weight:600; }
+.stat-card .s-value{ font-family:var(--font-display); font-size:32px; font-weight:700; margin:2px 0 6px; }
+.stat-card .s-delta{ font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; }
+.s-delta.up{ color:var(--teal-dark); } [data-theme="dark"] .s-delta.up{ color:var(--teal); }
+.s-delta.down{ color:var(--rose); }
+.ic-amber{ background:rgba(245,158,11,0.16); color:var(--amber-dark); }
+.ic-teal{ background:rgba(251,146,60,0.14); color:var(--teal-dark); }
+[data-theme="dark"] .ic-teal{ color:var(--teal); }
+.ic-rose{ background:rgba(228,87,61,0.14); color:var(--rose); }
+.ic-ink{ background:rgba(15,23,42,0.08); color:var(--ink); }
+
+.grid-2{ display:grid; grid-template-columns:1.4fr 1fr; gap:20px; }
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+
+/* ---- Stat band: one elegant divided strip instead of repeated small cards ---- */
+.stat-band{ display:flex; align-items:stretch; margin-bottom:20px; padding:6px 0; }
+.stat-band-item{ flex:1; padding:16px 28px; display:flex; flex-direction:column; gap:7px; min-width:0; }
+.stat-band-item + .stat-band-item{ border-left:1px solid var(--line); }
+.stat-band-item .sb-top{ display:flex; align-items:center; gap:9px; }
+.stat-band-item .sb-ic{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+.stat-band-item .sb-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-soft); font-weight:600; }
+.stat-band-item .sb-value{ font-family:var(--font-display); font-size:28px; font-weight:700; line-height:1; }
+.stat-band-item .sb-delta{ font-size:11.5px; font-weight:600; display:inline-flex; align-items:center; gap:4px; }
+@media (max-width: 900px){
+  .stat-band{ flex-wrap:wrap; }
+  .stat-band-item{ flex:1 1 50%; padding:14px 20px; }
+  .stat-band-item + .stat-band-item{ border-left:1px solid var(--line); }
+  .stat-band-item:nth-child(2n+1){ border-left:none; }
+}
+@media (max-width: 560px){
+  .stat-band-item{ flex:1 1 100%; border-left:none !important; border-top:1px solid var(--line); padding:14px 4px; }
+  .stat-band-item:first-child{ border-top:none; }
+}
+
+.bar-row{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.bar-row:last-child{ margin-bottom:0; }
+.bar-row .label{ width:130px; flex-shrink:0; font-size:12.5px; color:var(--text-soft); }
+.bar-track{ flex:1; height:9px; border-radius:100px; background:var(--line); overflow:hidden; }
+.bar-fill{ height:100%; border-radius:100px; background:linear-gradient(90deg, var(--amber), var(--teal)); transition: width 1.1s cubic-bezier(.22,1,.36,1); }
+.bar-val{ width:38px; text-align:right; font-family:var(--font-mono); font-size:12px; color:var(--text-soft); }
+
+.activity-list{ display:flex; flex-direction:column; gap:2px; }
+.activity-item{ display:flex; gap:12px; padding:12px 6px; border-radius:var(--radius-sm); transition:background var(--transition); }
+.activity-item:hover{ background:var(--paper); }
+.activity-dot{ width:8px; height:8px; border-radius:50%; background:var(--teal); margin-top:6px; flex-shrink:0; }
+.activity-item .a-text{ font-size:13.5px; } .activity-item .a-time{ font-size:11.5px; color:var(--text-soft); margin-top:2px; }
+
+/* ---- Badges ---- */
+.badge{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11.5px; font-weight:600; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.02em; }
+.badge-draft{ background:rgba(91,96,112,0.14); color:var(--text-soft); }
+.badge-published{ background:rgba(251,146,60,0.14); color:var(--teal-dark); } [data-theme="dark"] .badge-published{ color:var(--teal); }
+.badge-completed{ background:rgba(245,158,11,0.16); color:var(--amber-dark); }
+.badge-expired{ background:rgba(228,87,61,0.14); color:var(--rose); }
+.badge-present{ background:rgba(251,146,60,0.14); color:var(--teal-dark); } [data-theme="dark"] .badge-present{ color:var(--teal); }
+.badge-absent{ background:rgba(228,87,61,0.14); color:var(--rose); }
+.badge-late{ background:rgba(245,158,11,0.16); color:var(--amber-dark); }
+.badge-excused{ background:rgba(15,23,42,0.08); color:var(--ink-soft); }
+
+/* ---- Buttons (identical to Login.html) ---- */
+.btn{ font-weight:600; font-size:14px; padding:10px 20px; border-radius:100px; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition: transform var(--transition), box-shadow var(--transition), background var(--transition), color var(--transition); white-space:nowrap; position:relative; overflow:hidden; }
+.btn-primary{ background:linear-gradient(135deg, var(--amber), var(--amber-dark)); color:#fff; box-shadow:0 6px 16px rgba(245,158,11,0.30); }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(245,158,11,0.40); }
+.btn-ghost{ color:var(--text); border:1px solid var(--line); }
+.btn-ghost:hover{ background:var(--paper); border-color:var(--amber); color:var(--amber-dark); }
+.btn-accent{ background:linear-gradient(135deg, var(--teal), var(--amber)); color:#fff; box-shadow:0 6px 16px rgba(245,158,11,0.24); }
+.btn-accent:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(245,158,11,0.34); }
+
+/* ---- Quick Actions bar (dashboard, top-left, always visible) ---- */
+.quick-actions-bar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 16px;
+  background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-md);
+  margin-bottom:20px; position:sticky; top:78px; z-index:20; box-shadow:var(--shadow-sm);
+}
+.quick-actions-bar .qa-primary{ order:-1; }
+@media (max-width: 560px){
+  .quick-actions-bar{ position:static; }
+}
+.btn-sm{ padding:7px 14px; font-size:12.5px; }
+.btn-icon{ width:34px; height:34px; padding:0; border-radius:50%; border:1px solid var(--line); }
+.btn-icon:hover{ background:var(--paper); border-color:var(--ink-soft); }
+.btn-danger{ color:var(--rose); border:1px solid rgba(228,87,61,0.3); }
+.btn-danger:hover{ background:rgba(228,87,61,0.08); }
+.btn[disabled]{ opacity:0.45; pointer-events:none; }
+
+/* ---- Table ---- */
+.table-wrap{ overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--line); }
+table{ width:100%; border-collapse:collapse; min-width:760px; }
+thead th{ text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-soft); font-weight:600; padding:13px 16px; background:var(--paper); border-bottom:1px solid var(--line); white-space:nowrap; }
+tbody td{ padding:13px 16px; font-size:13.5px; border-bottom:1px solid var(--line); vertical-align:middle; }
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr{ transition:background var(--transition); background:var(--paper-raised); }
+tbody tr:hover{ background:var(--paper); }
+.row-person{ display:flex; align-items:center; gap:10px; }
+.row-avatar{ width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--amber),var(--rose)); color:#1B1300; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+.row-name{ font-weight:600; font-size:13.5px; } .row-sub{ font-size:11.5px; color:var(--text-soft); }
+.td-actions{ display:flex; gap:6px; }
+
+/* ---- Form fields (from Login.html) ---- */
+.field{ position:relative; margin-bottom:18px; }
+.field label{ position:absolute; left:14px; top:13px; font-size:13.5px; color:var(--text-soft); pointer-events:none; transition: all var(--transition); background:transparent; padding:0 4px; }
+.field input,.field select,.field textarea{ width:100%; padding:15px 14px 5px; font-size:14px; color:var(--text); background:var(--paper-raised); border:1.5px solid var(--line); border-radius:var(--radius-sm); transition: border-color var(--transition), box-shadow var(--transition); appearance:none; -webkit-appearance:none; }
+.field textarea{ padding-top:15px; min-height:80px; resize:vertical; }
+.field input::placeholder{ color:transparent; }
+.field input:focus,.field select:focus,.field textarea:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 4px rgba(251,146,60,0.14); }
+.field input:focus + label,.field input:not(:placeholder-shown) + label,.field.has-value label,.field select + label,.field textarea:focus + label,.field textarea:not(:placeholder-shown) + label{ top:5px; font-size:10.5px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--teal-dark); }
+[data-theme="dark"] .field input:focus + label,[data-theme="dark"] .field select + label,[data-theme="dark"] .field textarea:focus + label{ color:var(--teal); }
+.field.select-field label{ position:static; display:block; margin-bottom:7px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-soft); }
+.field.select-field select{ padding:13px 14px; }
+.field-static label{ display:block; margin-bottom:7px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-soft); }
+.row-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.row-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+.row-5{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+.checkbox-wrap{ display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--text-soft); cursor:pointer; }
+.checkbox-wrap input{ width:16px; height:16px; accent-color:var(--teal-dark); cursor:pointer; }
+
+/* ---- Filter bar / sticky controls ---- */
+.filter-bar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 16px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-md); margin-bottom:18px; position:sticky; top:78px; z-index:20; box-shadow:var(--shadow-sm); }
+.filter-bar select, .filter-bar .search-mini input{ padding:9px 12px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-size:13px; background:var(--paper); color:var(--text); }
+.search-mini{ position:relative; flex:1; min-width:180px; }
+.search-mini input{ width:100%; padding-left:32px; }
+.search-mini .s-ic{ position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--text-soft); }
+.bulk-bar{ display:none; align-items:center; gap:12px; padding:12px 16px; background:var(--ink); color:var(--paper); border-radius:var(--radius-md); margin-bottom:14px; position:sticky; top:140px; z-index:19; }
+.bulk-bar.show{ display:flex; animation: view-in 0.3s ease; }
+.bulk-bar .count{ font-weight:700; font-family:var(--font-mono); }
+.bulk-bar .btn{ padding:7px 14px; font-size:12.5px; }
+.bulk-bar .btn-mini-present{ background:var(--teal); color:#fff; }
+.bulk-bar .btn-mini-absent{ background:var(--rose); color:#fff; }
+.bulk-bar .btn-mini-late{ background:var(--amber); color:#1B1300; }
+.bulk-bar .btn-mini-excused{ background:rgba(255,255,255,0.14); color:#fff; }
+
+.att-actions{ display:flex; gap:6px; }
+.att-btn{ width:30px; height:30px; border-radius:8px; border:1.5px solid var(--line); font-size:12px; display:flex; align-items:center; justify-content:center; transition:all var(--transition); }
+.att-btn[data-state="present"]:hover, .att-btn.on-present{ background:var(--teal); border-color:var(--teal); color:#fff; }
+.att-btn[data-state="absent"]:hover, .att-btn.on-absent{ background:var(--rose); border-color:var(--rose); color:#fff; }
+.att-btn[data-state="late"]:hover, .att-btn.on-late{ background:var(--amber); border-color:var(--amber); color:#1B1300; }
+.att-btn[data-state="excused"]:hover, .att-btn.on-excused{ background:var(--ink-soft); border-color:var(--ink-soft); color:#fff; }
+
+/* ---- Toast ---- */
+.toast-wrap{ position:fixed; bottom:24px; right:24px; z-index:9000; display:flex; flex-direction:column; gap:10px; }
+.toast{ background:var(--ink); color:var(--paper); padding:14px 18px; border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); font-size:13.5px; display:flex; align-items:center; gap:10px; min-width:260px; animation: toast-in 0.4s cubic-bezier(.22,1,.36,1); }
+@keyframes toast-in{ from{ opacity:0; transform:translateY(16px) scale(0.96); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.toast .t-ic{ width:22px; height:22px; border-radius:50%; background:var(--teal); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+
+/* ---- Modal ---- */
+.modal-overlay{ position:fixed; inset:0; background:rgba(15,23,42,0.5); backdrop-filter:blur(4px); z-index:1000; display:none; align-items:center; justify-content:center; padding:24px; }
+.modal-overlay.show{ display:flex; animation: fade-in 0.3s ease; }
+@keyframes fade-in{ from{ opacity:0; } to{ opacity:1; } }
+.modal{ background:var(--paper-raised); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:100%; max-width:640px; max-height:88vh; overflow-y:auto; animation: panel-in 0.4s cubic-bezier(.22,1,.36,1); border:1px solid var(--line); }
+.modal.modal-lg{ max-width:860px; }
+@keyframes panel-in{ from{ opacity:0; transform:translateY(14px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:22px 26px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--paper-raised); z-index:2; }
+.modal-head h3{ font-size:19px; }
+.modal-close{ width:32px; height:32px; border-radius:50%; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+.modal-close:hover{ background:var(--paper); }
+.modal-body{ padding:24px 26px; }
+.modal-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 26px; border-top:1px solid var(--line); position:sticky; bottom:0; background:var(--paper-raised); }
+
+/* ---- Stepper ---- */
+.stepper{ display:flex; align-items:center; gap:8px; margin-bottom:24px; }
+.step{ flex:1; display:flex; align-items:center; gap:10px; }
+.step-num{ width:26px; height:26px; border-radius:50%; background:var(--line); color:var(--text-soft); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; transition:all var(--transition); }
+.step.active .step-num, .step.done .step-num{ background:var(--teal); color:#fff; }
+.step-label{ font-size:12px; color:var(--text-soft); font-weight:600; }
+.step.active .step-label{ color:var(--text); }
+.step-line{ flex:1; height:2px; background:var(--line); }
+
+.qtype-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.qtype-card{ padding:16px 10px; text-align:center; border:1.5px solid var(--line); border-radius:var(--radius-sm); cursor:pointer; transition:all var(--transition); font-size:12.5px; font-weight:600; }
+.qtype-card:hover{ border-color:var(--teal); }
+.qtype-card.selected{ border-color:var(--teal); background:rgba(251,146,60,0.08); color:var(--teal-dark); }
+[data-theme="dark"] .qtype-card.selected{ color:var(--teal); }
+.qtype-card .qty{ display:block; font-size:20px; margin-bottom:6px; }
+
+.section-count-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px; }
+.section-count-row .sc-label{ font-size:13.5px; font-weight:600; }
+.stepper-input{ display:flex; align-items:center; gap:8px; }
+.stepper-input button{ width:26px; height:26px; border-radius:6px; border:1px solid var(--line); }
+.stepper-input button:hover{ background:var(--paper); }
+.stepper-input input{ width:48px; text-align:center; padding:5px; border:1.5px solid var(--line); border-radius:6px; font-size:13px; }
+.total-q-banner{ margin-top:14px; padding:14px 16px; background:rgba(245,158,11,0.1); border:1px dashed var(--amber-dark); border-radius:var(--radius-sm); font-size:13.5px; font-weight:600; display:flex; justify-content:space-between; }
+
+.q-progress{ font-family:var(--font-mono); font-size:12px; color:var(--text-soft); margin-bottom:14px; }
+.q-nav-dots{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; }
+.q-dot{ width:26px; height:26px; border-radius:6px; border:1.5px solid var(--line); font-size:10.5px; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; color:var(--text-soft); }
+.q-dot.done{ background:var(--teal); border-color:var(--teal); color:#fff; }
+.q-dot.current{ border-color:var(--amber-dark); color:var(--amber-dark); font-weight:700; }
+
+/* ---- Calendar ---- */
+.cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.cal-nav{ display:flex; align-items:center; gap:10px; }
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.cal-dow{ text-align:center; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; color:var(--text-soft); padding-bottom:6px; }
+.cal-cell{ min-height:92px; border:1px solid var(--line); border-radius:10px; padding:8px; font-size:12px; background:var(--paper-raised); transition:background var(--transition); }
+.cal-cell:hover{ background:var(--paper); }
+.cal-cell.muted{ opacity:0.35; }
+.cal-cell.today{ border-color:var(--teal); box-shadow:0 0 0 2px rgba(251,146,60,0.16); }
+.cal-daynum{ font-weight:700; font-size:12.5px; margin-bottom:6px; }
+.cal-evt{ font-size:10px; padding:3px 6px; border-radius:5px; margin-bottom:3px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-evt.type-assess{ background:rgba(228,87,61,0.14); color:var(--rose); }
+.cal-evt.type-workshop{ background:rgba(251,146,60,0.14); color:var(--teal-dark); }
+[data-theme="dark"] .cal-evt.type-workshop{ color:var(--teal); }
+.cal-evt.type-session{ background:rgba(245,158,11,0.16); color:var(--amber-dark); }
+
+/* ---- Rating slider ---- */
+.rating-row{ margin-bottom:20px; }
+.rating-row .r-label{ display:flex; justify-content:space-between; font-size:13.5px; font-weight:600; margin-bottom:8px; }
+.rating-row .r-val{ font-family:var(--font-mono); color:var(--teal-dark); } [data-theme="dark"] .rating-row .r-val{ color:var(--teal); }
+.rating-row input[type=range]{ width:100%; accent-color:var(--teal-dark); }
+
+/* ---- Report cards ---- */
+.report-card{ padding:22px; display:flex; flex-direction:column; gap:14px; }
+.report-card .r-ic{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:19px; background:rgba(251,146,60,0.14); color:var(--teal-dark); }
+[data-theme="dark"] .report-card .r-ic{ color:var(--teal); }
+.export-row{ display:flex; gap:8px; margin-top:auto; }
+
+/* ---- Empty / skeleton ---- */
+.empty-state{ text-align:center; padding:60px 20px; color:var(--text-soft); }
+.empty-state .e-ic{ font-size:36px; margin-bottom:12px; }
+.skeleton{ background:linear-gradient(90deg, var(--line) 25%, var(--paper) 50%, var(--line) 75%); background-size:400% 100%; animation:sk 1.4s ease infinite; border-radius:8px; }
+@keyframes sk{ 0%{background-position:100% 0;} 100%{background-position:-100% 0;} }
+
+/* ============================================================
+   PREMIUM DASHBOARD INFOGRAPHICS
+============================================================ */
+.dash-hero{
+  display:grid; grid-template-columns:1.15fr 1fr; align-items:stretch; overflow:hidden; margin-bottom:20px;
+}
+.dash-hero-text{ padding:32px 34px; display:flex; flex-direction:column; justify-content:center; gap:18px; }
+.dash-hero-text h2{ font-size:28px; }
+.dash-hero-text > p{ color:var(--text-soft); font-size:14px; margin-top:-10px; }
+.dash-hero-pills{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.hero-pill{ display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-md); transition:transform var(--transition), box-shadow var(--transition); }
+.hero-pill:hover{ transform:translateY(-2px); box-shadow:var(--shadow-sm); }
+.hero-pill .hp-ic{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.hero-pill strong{ display:block; font-family:var(--font-display); font-size:18px; line-height:1.2; }
+.hero-pill span{ font-size:11px; color:var(--text-soft); }
+.dash-hero-img{ position:relative; min-height:220px; }
+.dash-hero-img img{ width:100%; height:100%; object-fit:cover; }
+.dash-hero-img::after{ content:''; position:absolute; inset:0; background:linear-gradient(90deg, var(--paper-raised) 0%, rgba(0,0,0,0) 18%); }
+[data-theme="dark"] .dash-hero-img::after{ background:linear-gradient(90deg, var(--paper-raised) 0%, rgba(0,0,0,0) 18%); }
+
+/* ---- Page hero banners (secondary views) ---- */
+.page-hero{ position:relative; border-radius:var(--radius-lg); overflow:hidden; margin-bottom:20px; box-shadow:var(--shadow-md); height:150px; }
+.page-hero img{ width:100%; height:100%; object-fit:cover; display:block; }
+.page-hero::after{ content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(15,23,42,0.55) 0%, rgba(15,23,42,0.05) 55%, rgba(15,23,42,0) 100%); }
+.page-hero-text{ position:absolute; left:26px; top:0; bottom:0; display:flex; flex-direction:column; justify-content:center; z-index:2; max-width:70%; }
+.page-hero-text h3{ font-size:19px; color:#FFFCF8; margin-bottom:4px; }
+.page-hero-text p{ font-size:12.5px; color:rgba(255,252,248,0.82); }
+@media (max-width:640px){ .page-hero{ height:120px; } .page-hero-text{ max-width:85%; left:18px; } .page-hero-text h3{ font-size:16px; } .page-hero-text p{ display:none; } }
+
+.dash-row-3{ display:grid; grid-template-columns:1.6fr 1fr; gap:20px; margin-bottom:20px; }
+.dash-row-3b{ display:grid; grid-template-columns:1fr 0.85fr 1.15fr; gap:20px; margin-bottom:20px; }
+
+/* Trend chart */
+.trend-badge{ font-family:var(--font-mono); }
+.dash-trend svg{ width:100%; height:auto; display:block; }
+.trend-tip{ font-family:var(--font-display); font-weight:700; }
+
+/* Ranking rows */
+.rank-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
+.rank-row:last-child{ border-bottom:none; padding-bottom:0; }
+.rank-row:first-child{ padding-top:0; }
+.rank-num{ width:26px; height:26px; border-radius:8px; background:var(--paper); border:1px solid var(--line); font-family:var(--font-mono); font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--text-soft); flex-shrink:0; }
+.rank-row:nth-child(1) .rank-num{ background:linear-gradient(135deg,var(--amber),var(--amber-dark)); color:#1B1300; border-color:transparent; }
+.rank-info{ flex:1; min-width:0; }
+.rank-info .r-name{ font-size:13px; font-weight:600; margin-bottom:6px; }
+.rank-val{ font-family:var(--font-mono); font-size:12.5px; font-weight:700; color:var(--teal-dark); width:38px; text-align:right; flex-shrink:0; }
+[data-theme="dark"] .rank-val{ color:var(--teal); }
+
+/* Radar */
+.dash-radar svg{ width:100%; height:auto; max-width:280px; margin:0 auto; display:block; }
+.radar-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center; margin-top:10px; font-size:11.5px; color:var(--text-soft); }
+
+/* Ring / circular progress */
+.dash-ring{ display:flex; flex-direction:column; align-items:center; text-align:center; }
+.ring-wrap{ position:relative; width:168px; height:168px; margin:6px auto 6px; }
+.ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.ring-fill{ transition: stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1); }
+.ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring-center strong{ font-family:var(--font-display); font-size:28px; }
+.ring-center span{ font-size:10.5px; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.06em; font-family:var(--font-mono); }
+.ring-stats{ display:flex; gap:18px; margin-top:6px; }
+.ring-stats div{ text-align:center; }
+.ring-stats strong{ display:block; font-size:15px; font-family:var(--font-display); }
+.ring-stats span{ font-size:10.5px; color:var(--text-soft); }
+
+/* Session timeline */
+.sess-timeline{ position:relative; padding-left:22px; }
+.sess-timeline::before{ content:''; position:absolute; left:5px; top:4px; bottom:4px; width:1.5px; background:var(--line); }
+.sess-item{ position:relative; padding-bottom:18px; }
+.sess-item:last-child{ padding-bottom:0; }
+.sess-item::before{ content:''; position:absolute; left:-22px; top:3px; width:11px; height:11px; border-radius:50%; background:var(--paper-raised); border:2.5px solid var(--teal); }
+.sess-item.is-today::before{ border-color:var(--amber-dark); background:var(--amber); box-shadow:0 0 0 4px rgba(245,158,11,0.18); }
+.sess-item .se-name{ font-size:13px; font-weight:600; margin-bottom:2px; }
+.sess-item .se-meta{ font-size:11.5px; color:var(--text-soft); }
+
+/* Activity timeline w/ icons */
+.activity-list.premium .activity-item{ align-items:flex-start; }
+.activity-ic{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+
+@media (max-width: 1180px){
+  .dash-hero{ grid-template-columns:1fr; }
+  .dash-hero-img{ min-height:180px; order:-1; }
+  .dash-hero-img::after{ display:none; }
+  .dash-row-3, .dash-row-3b{ grid-template-columns:1fr; }
+}
+
+/* ============================================================
+   BULK UPLOAD STUDENTS
+============================================================ */
+.dropzone{ border:2px dashed var(--line); border-radius:var(--radius-md); padding:36px 20px; text-align:center; cursor:pointer; transition:all var(--transition); background:var(--paper); }
+.dropzone:hover, .dropzone.dragover{ border-color:var(--teal); background:rgba(251,146,60,0.06); }
+.dropzone .dz-icon{ width:52px; height:52px; border-radius:14px; background:rgba(245,158,11,0.16); color:var(--amber-dark); display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 14px; }
+.dropzone .dz-title{ font-weight:600; font-size:14.5px; margin-bottom:4px; }
+.dropzone .dz-sub{ font-size:12px; color:var(--text-soft); }
+.dropzone input[type=file]{ display:none; }
+
+.upload-meta-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:16px; font-size:12.5px; color:var(--text-soft); flex-wrap:wrap; }
+
+.file-chip{ display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); margin-top:16px; background:var(--paper-raised); }
+.file-chip .fc-ic{ width:36px; height:36px; border-radius:10px; background:rgba(251,146,60,0.14); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+[data-theme="dark"] .file-chip .fc-ic{ color:var(--teal); }
+.file-chip .fc-info{ flex:1; min-width:0; }
+.file-chip .fc-name{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.file-chip .fc-size{ font-size:11px; color:var(--text-soft); }
+.file-chip .fc-remove{ width:26px; height:26px; border-radius:50%; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+.file-chip .fc-remove:hover{ background:var(--paper); }
+
+.upload-progress-wrap{ margin-top:14px; }
+.upload-progress-label{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-soft); margin-bottom:6px; font-family:var(--font-mono); }
+.upload-progress-track{ height:8px; border-radius:100px; background:var(--line); overflow:hidden; }
+.upload-progress-fill{ height:100%; border-radius:100px; background:linear-gradient(90deg, var(--amber), var(--teal)); width:0%; transition:width 0.25s linear; }
+
+.val-summary{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.val-stat{ padding:14px; border:1px solid var(--line); border-radius:var(--radius-sm); text-align:center; background:var(--paper); }
+.val-stat strong{ display:block; font-family:var(--font-display); font-size:22px; }
+.val-stat span{ font-size:10.5px; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.04em; font-family:var(--font-mono); }
+.val-stat.v-valid strong{ color:var(--teal-dark); } [data-theme="dark"] .val-stat.v-valid strong{ color:var(--teal); }
+.val-stat.v-invalid strong{ color:var(--rose); }
+.val-stat.v-dup strong{ color:var(--amber-dark); }
+
+tr.row-invalid td{ background:rgba(228,87,61,0.06); }
+.val-issue{ font-size:11px; color:var(--rose); display:flex; align-items:center; gap:4px; }
+.val-ok{ font-size:11px; color:var(--teal-dark); display:flex; align-items:center; gap:4px; } [data-theme="dark"] .val-ok{ color:var(--teal); }
+
+.bulk-success{ text-align:center; padding:20px 10px 6px; }
+.bulk-success .bs-ic{ width:64px; height:64px; border-radius:50%; background:rgba(251,146,60,0.14); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px; animation: bs-pop 0.5s cubic-bezier(.22,1,.36,1); }
+[data-theme="dark"] .bulk-success .bs-ic{ color:var(--teal); }
+@keyframes bs-pop{ from{ transform:scale(0.5); opacity:0; } to{ transform:scale(1); opacity:1; } }
+.bulk-success h3{ font-size:19px; margin-bottom:6px; }
+.bulk-success p{ color:var(--text-soft); font-size:13.5px; max-width:420px; margin:0 auto; }
+
+.toast.toast-error .t-ic{ background:var(--rose); }
+.toast .t-retry{ margin-left:auto; font-size:12px; font-weight:700; text-decoration:underline; flex-shrink:0; cursor:pointer; }
+
+@media (max-width: 640px){
+  .val-summary{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1180px){
+  .stat-grid{ grid-template-columns:repeat(2,1fr); }
+  .grid-2, .grid-3{ grid-template-columns:1fr; }
+  .row-5{ grid-template-columns:repeat(3,1fr); }
+}
+@media (max-width: 980px){
+  .sidebar{ transform:translateX(-100%); max-width:85vw; }
+  .sidebar.open{ transform:translateX(0); box-shadow:var(--shadow-lg); }
+  .main{ margin-left:0; }
+  .menu-toggle{ display:flex; }
+  .topbar-search{ display:none; }
+  .qtype-grid{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width: 640px){
+  .content{ padding:20px 16px 50px; }
+  .topbar{ padding:14px 16px; }
+  .stat-grid{ grid-template-columns:1fr; }
+  .row-2,.row-3,.row-5{ grid-template-columns:1fr; }
+  .filter-bar{ top:70px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="loader-mark"></div><div class="loader-text">Loading</div></div>
+
+<div class="app-shell">
+
+  <!-- ============================================================ SIDEBAR ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="brand"><span class="brand-mark">E</span> EIP</a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" data-view="dashboard"><span class="nav-ic">◆</span> Dashboard</div>
+      <div class="nav-item" data-view="calendar"><span class="nav-ic">▤</span> Calendar</div>
+
+      <div class="nav-section-label">Students</div>
+      <div class="nav-item" data-view="students"><span class="nav-ic">◍</span> All Students</div>
+      <div class="nav-item" data-view="attendance"><span class="nav-ic">✓</span> Attendance</div>
+      <div class="nav-item" data-view="participation"><span class="nav-ic">★</span> Participation</div>
+
+      <div class="nav-section-label">Assessments</div>
+      <div class="nav-item" data-view="quizzes"><span class="nav-ic">▦</span> Quizzes <span class="nav-badge">3</span></div>
+      <div class="nav-item" data-view="responses"><span class="nav-ic">▥</span> Quiz Responses</div>
+
+      <div class="nav-section-label">Interventions</div>
+      <div class="nav-item" data-view="workshops"><span class="nav-ic">◫</span> Workshops</div>
+
+      <div class="nav-section-label">Insights</div>
+      <div class="nav-item" data-view="analytics"><span class="nav-ic">▲</span> Analytics</div>
+      <div class="nav-item" data-view="reports"><span class="nav-ic">▧</span> Reports</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar">RS</div>
+        <div class="user-meta">
+          <div class="u-name">Rhea Sharma</div>
+          <div class="u-role">Trainer · CSE Dept</div>
+        </div>
+        <button class="icon-btn" style="width:30px;height:30px;" title="Sign out">⎋</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ============================================================ MAIN ============================================================ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false">
+        <span class="hamburger" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+      <h1 class="page-title"><span id="pageEyebrow">Trainer Workspace</span><span id="pageTitle">Dashboard</span></h1>
+      <div class="topbar-search"><span class="s-ic">⚲</span><input type="text" placeholder="Search students, quizzes, workshops…"></div>
+      <button class="icon-btn" title="Notifications"><span class="dot"></span>🔔</button>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+    </header>
+
+    <main class="content">
+
+      <!-- ============================================================ DASHBOARD ============================================================ -->
+      <section class="view active" id="view-dashboard">
+
+        <!-- QUICK ACTIONS — always visible at top, no scrolling required -->
+        <div class="quick-actions-bar">
+          <button class="btn btn-primary qa-primary" onclick="openQuizModal()">＋ Create Quiz</button>
+          <button class="btn btn-ghost" onclick="openWorkshopModal()">＋ Create Session</button>
+          <button class="btn btn-ghost" onclick="switchView('attendance')">✓ Mark Attendance</button>
+          <button class="btn btn-ghost" onclick="assignIntervention()">⚡ Assign Intervention</button>
+          <button class="btn btn-ghost" onclick="uploadMaterials()">⇧ Upload Materials</button>
+          <button class="btn btn-ghost" onclick="switchView('reports')">▧ Generate Report</button>
+        </div>
+
+        <!-- HERO -->
+        <div class="card dash-hero">
+          <div class="dash-hero-text">
+            <div>
+              <h2>Good morning, Rhea 👋</h2>
+              <p>Here's what's happening with your cohorts today.</p>
+            </div>
+            <div class="dash-hero-pills">
+              <div class="hero-pill"><span class="hp-ic ic-amber">◷</span><div><strong>4</strong><span>Sessions Today</span></div></div>
+              <div class="hero-pill"><span class="hp-ic ic-teal">◍</span><div><strong>612</strong><span>Students Trained</span></div></div>
+              <div class="hero-pill"><span class="hp-ic ic-rose">✓</span><div><strong>87.4%</strong><span>Attendance</span></div></div>
+              <div class="hero-pill"><span class="hp-ic ic-ink">▦</span><div><strong>74.2</strong><span>Avg Quiz Score</span></div></div>
+            </div>
+          </div>
+          <div class="dash-hero-img">
+            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1000&q=80&auto=format&fit=crop" alt="Students collaborating in a training session" loading="lazy">
+          </div>
+        </div>
+
+        <!-- TREND + DEPARTMENT RANKING -->
+        <div class="dash-row-3">
+          <div class="card card-pad dash-trend">
+            <div class="section-head">
+              <div><h3>Readiness Trend</h3><p>Average placement readiness score — last 8 weeks</p></div>
+              <span class="badge badge-published trend-badge">82% ▲ 6.1%</span>
+            </div>
+            <svg viewBox="0 0 700 240" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--amber)" stop-opacity="0.32"/>
+                  <stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="trendStroke" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="var(--amber-dark)"/>
+                  <stop offset="100%" stop-color="var(--amber)"/>
+                </linearGradient>
+                <filter id="trendGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="5" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              <g stroke="var(--line)" stroke-width="1">
+                <line x1="40" y1="20" x2="660" y2="20"/>
+                <line x1="40" y1="86.7" x2="660" y2="86.7"/>
+                <line x1="40" y1="153.3" x2="660" y2="153.3"/>
+                <line x1="40" y1="220" x2="660" y2="220"/>
+              </g>
+              <path d="M40,104 C84.29,104 84.29,96 128.57,96 C172.86,96 172.86,90 217.14,90 C261.43,90 261.43,80 305.71,80 C350,80 350,84 394.29,84 C438.57,84 438.57,72 482.86,72 C527.14,72 527.14,62 571.43,62 C615.71,62 615.71,56 660,56 L660,220 L40,220 Z" fill="url(#trendFill)"/>
+              <path d="M40,104 C84.29,104 84.29,96 128.57,96 C172.86,96 172.86,90 217.14,90 C261.43,90 261.43,80 305.71,80 C350,80 350,84 394.29,84 C438.57,84 438.57,72 482.86,72 C527.14,72 527.14,62 571.43,62 C615.71,62 615.71,56 660,56" fill="none" stroke="url(#trendStroke)" stroke-width="3.5" stroke-linecap="round" filter="url(#trendGlow)"/>
+              <circle cx="660" cy="56" r="6" fill="var(--paper-raised)" stroke="var(--amber-dark)" stroke-width="3"/>
+              <text x="580" y="42" class="trend-tip" fill="var(--ink)" font-size="15">82%</text>
+              <g fill="var(--text-soft)" font-family="var(--font-mono)" font-size="10.5">
+                <text x="40" y="236">Wk1</text><text x="211" y="236">Wk3</text><text x="382" y="236">Wk5</text><text x="553" y="236">Wk7</text><text x="640" y="236">Wk8</text>
+              </g>
+            </svg>
+          </div>
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Department Ranking</h3><p>By readiness score</p></div></div>
+            <div class="rank-row"><span class="rank-num">1</span><div class="rank-info"><div class="r-name">Computer Science</div><div class="bar-track"><div class="bar-fill" data-w="82" style="width:0"></div></div></div><span class="rank-val">82%</span></div>
+            <div class="rank-row"><span class="rank-num">2</span><div class="rank-info"><div class="r-name">Information Technology</div><div class="bar-track"><div class="bar-fill" data-w="79" style="width:0"></div></div></div><span class="rank-val">79%</span></div>
+            <div class="rank-row"><span class="rank-num">3</span><div class="rank-info"><div class="r-name">Electronics & Comm.</div><div class="bar-track"><div class="bar-fill" data-w="74" style="width:0"></div></div></div><span class="rank-val">74%</span></div>
+            <div class="rank-row"><span class="rank-num">4</span><div class="rank-info"><div class="r-name">Mechanical Engineering</div><div class="bar-track"><div class="bar-fill" data-w="61" style="width:0"></div></div></div><span class="rank-val">61%</span></div>
+            <div class="rank-row"><span class="rank-num">5</span><div class="rank-info"><div class="r-name">Civil Engineering</div><div class="bar-track"><div class="bar-fill" data-w="58" style="width:0"></div></div></div><span class="rank-val">58%</span></div>
+          </div>
+        </div>
+
+        <!-- SKILL RADAR + IMPROVEMENT RING + SESSION TIMELINE -->
+        <div class="dash-row-3b">
+          <div class="card card-pad dash-radar">
+            <h3 style="font-size:15px;margin-bottom:6px;">Skill Radar</h3>
+            <p style="color:var(--text-soft);font-size:12px;margin-bottom:10px;">Cohort average across core competencies</p>
+            <svg viewBox="0 0 300 280">
+              <g fill="none" stroke="var(--line)" stroke-width="1">
+                <circle cx="150" cy="150" r="27.5"/><circle cx="150" cy="150" r="55"/><circle cx="150" cy="150" r="82.5"/><circle cx="150" cy="150" r="110"/>
+                <line x1="150" y1="150" x2="150" y2="40"/><line x1="150" y1="150" x2="254.6" y2="116"/><line x1="150" y1="150" x2="214.7" y2="239"/><line x1="150" y1="150" x2="85.3" y2="239"/><line x1="150" y1="150" x2="45.4" y2="116"/>
+              </g>
+              <polygon points="150,59.8 227.4,124.8 194,210.5 96.3,223.9 74.7,125.5" fill="var(--amber)" fill-opacity="0.28" stroke="var(--amber-dark)" stroke-width="2" stroke-linejoin="round"/>
+              <g fill="var(--ink)" stroke="var(--paper-raised)" stroke-width="2">
+                <circle cx="150" cy="59.8" r="4"/><circle cx="227.4" cy="124.8" r="4"/><circle cx="194" cy="210.5" r="4"/><circle cx="96.3" cy="223.9" r="4"/><circle cx="74.7" cy="125.5" r="4"/>
+              </g>
+              <g font-family="var(--font-body)" font-size="11.5" font-weight="600" fill="var(--text)" text-anchor="middle">
+                <text x="150" y="28">Technical 82%</text>
+                <text x="280" y="112" text-anchor="start">Aptitude 74%</text>
+                <text x="214" y="258">Comm. 68%</text>
+                <text x="86" y="258">Problem Solving 83%</text>
+                <text x="20" y="112" text-anchor="start">Behavioral 72%</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="card card-pad dash-ring">
+            <h3 style="font-size:15px;margin-bottom:2px;">Avg Improvement</h3>
+            <p style="color:var(--text-soft);font-size:12px;">baseline → mid assessment</p>
+            <div class="ring-wrap">
+              <svg viewBox="0 0 168 168">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="var(--amber)"/>
+                    <stop offset="100%" stop-color="var(--teal)"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="84" cy="84" r="70" fill="none" stroke="var(--line)" stroke-width="14"/>
+                <circle class="ring-fill" cx="84" cy="84" r="70" fill="none" stroke="url(#ringGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="439.8" stroke-dashoffset="439.8" data-pct="82"/>
+              </svg>
+              <div class="ring-center"><strong>+12.6%</strong><span>Improvement</span></div>
+            </div>
+            <div class="ring-stats">
+              <div><strong>16</strong><span>Workshops</span></div>
+              <div><strong>4.3/5</strong><span>Avg Rating</span></div>
+            </div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="section-head"><div><h3 style="font-size:15px;">Upcoming Sessions</h3></div></div>
+            <div class="sess-timeline">
+              <div class="sess-item is-today"><div class="se-name">GD Practice — Cohort A</div><div class="se-meta">Today · Jul 25</div></div>
+              <div class="sess-item"><div class="se-name">Interview Session — CSE</div><div class="se-meta">Jul 27 · 10:00 AM</div></div>
+              <div class="sess-item"><div class="se-name">Resume Workshop</div><div class="se-meta">Jul 28 · 2:00 PM</div></div>
+              <div class="sess-item"><div class="se-name">Programming Mid Assessment</div><div class="se-meta">Jul 30 · 9:00 AM</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="card card-pad">
+          <div class="section-head"><div><h3>Recent Activity</h3></div></div>
+          <div class="activity-list premium">
+            <div class="activity-item"><span class="activity-ic ic-teal">▦</span><div><div class="a-text"><strong>42 students</strong> completed the Communication Baseline quiz</div><div class="a-time">18 minutes ago</div></div></div>
+            <div class="activity-item"><span class="activity-ic ic-amber">✓</span><div><div class="a-text">Attendance marked for <strong>ECE — 3rd Year</strong></div><div class="a-time">1 hour ago</div></div></div>
+            <div class="activity-item"><span class="activity-ic ic-rose">◫</span><div><div class="a-text"><strong>Resume Workshop</strong> scheduled for Jul 28</div><div class="a-time">3 hours ago</div></div></div>
+            <div class="activity-item"><span class="activity-ic ic-ink">▤</span><div><div class="a-text">Mid Assessment for <strong>Cohort B</strong> published</div><div class="a-time">Yesterday</div></div></div>
+            <div class="activity-item"><span class="activity-ic ic-teal">★</span><div><div class="a-text">Participation ratings updated for <strong>28 students</strong></div><div class="a-time">Yesterday</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ CALENDAR ============================================================ -->
+      <section class="view" id="view-calendar">
+        <div class="card card-pad">
+          <div class="cal-head">
+            <div><h3>July 2026</h3><p style="color:var(--text-soft);font-size:13px;">Assessments, workshops & session reminders</p></div>
+            <div class="cal-nav">
+              <div style="display:flex;gap:0;border:1px solid var(--line);border-radius:100px;overflow:hidden;">
+                <button class="btn btn-sm" style="border-radius:0;background:var(--paper);">Month</button>
+                <button class="btn btn-sm btn-ghost" style="border-radius:0;border:none;">Week</button>
+                <button class="btn btn-sm btn-ghost" style="border-radius:0;border:none;">Day</button>
+              </div>
+              <button class="btn-icon">‹</button><button class="btn-icon">›</button>
+              <button class="btn btn-accent btn-sm" onclick="openWorkshopModal()">＋ New Event</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ STUDENTS ============================================================ -->
+      <section class="view" id="view-students">
+        <div class="page-hero">
+          <img src="https://images.unsplash.com/photo-1758270705290-62b6294dd044?w=1200&q=80&auto=format&fit=crop" alt="Students collaborating around a laptop" loading="lazy">
+          <div class="page-hero-text"><h3>Student Directory</h3><p>612 students across 5 departments and 3 cohorts</p></div>
+        </div>
+        <div class="filter-bar">
+          <div class="search-mini"><span class="s-ic">⚲</span><input type="text" placeholder="Search by name or roll number…"></div>
+          <select><option>All Departments</option><option>CSE</option><option>ECE</option><option>Mechanical</option><option>Civil</option><option>IT</option></select>
+          <select><option>All Cohorts</option><option>Cohort A — High Readiness</option><option>Cohort B — Developing</option><option>Cohort C — Needs Support</option></select>
+          <select><option>All Students</option><option>Assigned to Me</option></select>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="btn btn-ghost btn-sm" onclick="showToast('Add Student form — coming soon','＋')">＋ Add Student</button>
+            <button class="btn btn-accent btn-sm" onclick="openBulkUploadModal()">⇧ Bulk Upload</button>
+            <button class="btn btn-ghost btn-sm">Export</button>
+          </div>
+        </div>
+        <div class="table-wrap card">
+          <table>
+            <thead><tr><th>Student</th><th>Roll No.</th><th>Department</th><th>Cohort</th><th>Attendance</th><th>Avg Score</th><th>Status</th><th></th></tr></thead>
+            <tbody id="studentsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ ATTENDANCE ============================================================ -->
+      <section class="view" id="view-attendance">
+        <div class="filter-bar">
+          <div class="search-mini"><span class="s-ic">⚲</span><input type="text" id="attSearch" placeholder="Quick search students…"></div>
+          <select id="attDept"><option>All Departments</option><option>CSE</option><option>ECE</option><option>Mechanical</option><option>Civil</option><option>IT</option></select>
+          <select><option>All Cohorts</option><option>Cohort A</option><option>Cohort B</option><option>Cohort C</option></select>
+          <select><option>Today — Jul 23, 2026</option><option>Yesterday</option><option>Custom date</option></select>
+          <label class="checkbox-wrap"><input type="checkbox" id="selectAllAtt"> Select all</label>
+        </div>
+        <div class="bulk-bar" id="bulkBar">
+          <span class="count" id="bulkCount">0 selected</span>
+          <button class="btn btn-sm btn-mini-present" onclick="bulkMark('present')">✓ Present</button>
+          <button class="btn btn-sm btn-mini-absent" onclick="bulkMark('absent')">✕ Absent</button>
+          <button class="btn btn-sm btn-mini-late" onclick="bulkMark('late')">◷ Late</button>
+          <button class="btn btn-sm btn-mini-excused" onclick="bulkMark('excused')">⌫ Excused</button>
+        </div>
+        <div class="table-wrap card">
+          <table>
+            <thead><tr><th style="width:34px;"></th><th>Student</th><th>Roll No.</th><th>Department</th><th>Cohort</th><th>Mark</th></tr></thead>
+            <tbody id="attTbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+          <button class="btn btn-primary" onclick="showToast('Attendance saved for 42 students','✓')">Save Attendance — POST /trainer/attendance</button>
+        </div>
+      </section>
+
+      <!-- ============================================================ PARTICIPATION ============================================================ -->
+      <section class="view" id="view-participation">
+        <div class="grid-2">
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Select Student</h3></div></div>
+            <div class="table-wrap" style="border:1px solid var(--line);border-radius:var(--radius-sm);max-height:420px;overflow-y:auto;">
+              <table><tbody id="partList"></tbody></table>
+            </div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Rate Participation</h3><p id="partSelected">Ananya Rao — CSE-21B04</p></div></div>
+            <div class="rating-row"><div class="r-label"><span>Communication</span><span class="r-val" id="rv1">7</span></div><input type="range" min="1" max="10" value="7" oninput="document.getElementById('rv1').textContent=this.value"></div>
+            <div class="rating-row"><div class="r-label"><span>Confidence</span><span class="r-val" id="rv2">6</span></div><input type="range" min="1" max="10" value="6" oninput="document.getElementById('rv2').textContent=this.value"></div>
+            <div class="rating-row"><div class="r-label"><span>Engagement</span><span class="r-val" id="rv3">8</span></div><input type="range" min="1" max="10" value="8" oninput="document.getElementById('rv3').textContent=this.value"></div>
+            <div class="rating-row"><div class="r-label"><span>Participation</span><span class="r-val" id="rv4">7</span></div><input type="range" min="1" max="10" value="7" oninput="document.getElementById('rv4').textContent=this.value"></div>
+            <div class="rating-row"><div class="r-label"><span>Behavior</span><span class="r-val" id="rv5">9</span></div><input type="range" min="1" max="10" value="9" oninput="document.getElementById('rv5').textContent=this.value"></div>
+            <div class="field"><textarea placeholder=" " id="remarksTxt"></textarea><label>Remarks</label></div>
+            <button class="btn btn-primary btn-block" style="width:100%;" onclick="showToast('Participation saved','★')">Save Rating — POST /trainer/participation</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ QUIZZES ============================================================ -->
+      <section class="view" id="view-quizzes">
+        <div class="page-hero">
+          <img src="https://images.unsplash.com/photo-1701889297494-16eb5bc8dca6?w=1200&q=80&auto=format&fit=crop" alt="Student typing on a laptop while taking an assessment" loading="lazy">
+          <div class="page-hero-text"><h3>Assessment Center</h3><p>Focused, distraction-free testing for every cohort</p></div>
+        </div>
+        <div class="section-head">
+          <div><h3>Quizzes &amp; Assessments</h3><p>Baseline, mid, final and custom assessments</p></div>
+          <button class="btn btn-accent" onclick="openQuizModal()">＋ Create Quiz</button>
+        </div>
+        <div class="filter-bar" style="position:static;">
+          <select id="quizStatusFilter" onchange="renderQuizzes()"><option value="all">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="completed">Completed</option><option value="expired">Expired</option></select>
+          <select><option>All Types</option><option>Baseline</option><option>Mid</option><option>Final</option><option>Custom</option></select>
+          <div class="search-mini"><span class="s-ic">⚲</span><input type="text" placeholder="Search quizzes…"></div>
+        </div>
+        <div class="table-wrap card">
+          <table>
+            <thead><tr><th>Assessment</th><th>Type</th><th>Cohort</th><th>Questions</th><th>Date</th><th>Status</th><th></th></tr></thead>
+            <tbody id="quizTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ QUIZ RESPONSES ============================================================ -->
+      <section class="view" id="view-responses">
+        <div class="section-head">
+          <div><h3>Quiz Responses</h3><p>Communication Baseline Assessment — Cohort A</p></div>
+          <div style="display:flex;gap:10px;">
+            <select><option>Communication Baseline</option><option>Programming Mid Assessment</option><option>Reasoning Final</option></select>
+            <button class="btn btn-ghost btn-sm">⇩ Export</button>
+          </div>
+        </div>
+        <div class="card stat-band">
+          <div class="stat-band-item"><span class="sb-label">Attempted</span><div class="sb-value">186</div></div>
+          <div class="stat-band-item"><span class="sb-label">Pending</span><div class="sb-value">14</div></div>
+          <div class="stat-band-item"><span class="sb-label">Average Score</span><div class="sb-value">71.8</div></div>
+          <div class="stat-band-item"><span class="sb-label">Highest</span><div class="sb-value" style="color:var(--teal-dark);">98</div></div>
+          <div class="stat-band-item"><span class="sb-label">Lowest</span><div class="sb-value" style="color:var(--rose);">34</div></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Section-wise Performance</h3></div></div>
+            <div class="bar-row"><span class="label">Communication</span><div class="bar-track"><div class="bar-fill" data-w="78" style="width:0"></div></div><span class="bar-val">78%</span></div>
+            <div class="bar-row"><span class="label">Programming</span><div class="bar-track"><div class="bar-fill" data-w="65" style="width:0"></div></div><span class="bar-val">65%</span></div>
+            <div class="bar-row"><span class="label">Reasoning</span><div class="bar-track"><div class="bar-fill" data-w="82" style="width:0"></div></div><span class="bar-val">82%</span></div>
+            <div class="bar-row"><span class="label">Professionalism</span><div class="bar-track"><div class="bar-fill" data-w="71" style="width:0"></div></div><span class="bar-val">71%</span></div>
+            <div class="bar-row"><span class="label">Interview Readiness</span><div class="bar-track"><div class="bar-fill" data-w="59" style="width:0"></div></div><span class="bar-val">59%</span></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Leaderboard</h3></div></div>
+            <div class="activity-list" id="leaderboardList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ WORKSHOPS ============================================================ -->
+      <section class="view" id="view-workshops">
+        <div class="page-hero">
+          <img src="https://images.unsplash.com/photo-1758873268745-dd2cf0d677b5?w=1200&q=80&auto=format&fit=crop" alt="Team collaborating around a laptop in a workshop session" loading="lazy">
+          <div class="page-hero-text"><h3>Skill-Building Sessions</h3><p>Hands-on workshops that move readiness scores</p></div>
+        </div>
+        <div class="section-head">
+          <div><h3>Workshops &amp; Interventions</h3><p>Schedule and track skill-building sessions</p></div>
+          <button class="btn btn-accent" onclick="openWorkshopModal()">＋ Schedule Workshop</button>
+        </div>
+        <div class="grid-3" id="workshopGrid"></div>
+      </section>
+
+      <!-- ============================================================ ANALYTICS ============================================================ -->
+      <section class="view" id="view-analytics">
+        <div class="card stat-band">
+          <div class="stat-band-item">
+            <div class="sb-top"><span class="sb-ic ic-teal">▦</span><span class="sb-label">Assessment Completion</span></div>
+            <div class="sb-value">93%</div><span class="sb-delta" style="color:var(--teal-dark);">▲ 4% vs last cycle</span>
+          </div>
+          <div class="stat-band-item">
+            <div class="sb-top"><span class="sb-ic ic-amber">◫</span><span class="sb-label">Workshop Effectiveness</span></div>
+            <div class="sb-value">4.3/5</div><span class="sb-delta" style="color:var(--teal-dark);">▲ 0.2 vs last term</span>
+          </div>
+          <div class="stat-band-item">
+            <div class="sb-top"><span class="sb-ic ic-rose">★</span><span class="sb-label">Participation Trend</span></div>
+            <div class="sb-value">76%</div><span class="sb-delta" style="color:var(--rose);">▼ 2% this week</span>
+          </div>
+          <div class="stat-band-item">
+            <div class="sb-top"><span class="sb-ic ic-ink">▲</span><span class="sb-label">Avg Improvement</span></div>
+            <div class="sb-value">+12.6%</div><span class="sb-delta" style="color:var(--teal-dark);">▲ steady growth</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Assessment Performance Over Time</h3></div></div>
+            <div class="bar-row"><span class="label">Baseline</span><div class="bar-track"><div class="bar-fill" data-w="58" style="width:0"></div></div><span class="bar-val">58%</span></div>
+            <div class="bar-row"><span class="label">Mid Assessment</span><div class="bar-track"><div class="bar-fill" data-w="69" style="width:0"></div></div><span class="bar-val">69%</span></div>
+            <div class="bar-row"><span class="label">Final Assessment</span><div class="bar-track"><div class="bar-fill" data-w="74" style="width:0"></div></div><span class="bar-val">74%</span></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-head"><div><h3>Workshop Effectiveness</h3></div></div>
+            <div class="bar-row"><span class="label">Communication</span><div class="bar-track"><div class="bar-fill" data-w="88" style="width:0"></div></div><span class="bar-val">4.4</span></div>
+            <div class="bar-row"><span class="label">Interview Prep</span><div class="bar-track"><div class="bar-fill" data-w="84" style="width:0"></div></div><span class="bar-val">4.2</span></div>
+            <div class="bar-row"><span class="label">Resume Building</span><div class="bar-track"><div class="bar-fill" data-w="79" style="width:0"></div></div><span class="bar-val">4.0</span></div>
+            <div class="bar-row"><span class="label">GD Practice</span><div class="bar-track"><div class="bar-fill" data-w="91" style="width:0"></div></div><span class="bar-val">4.5</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ REPORTS ============================================================ -->
+      <section class="view" id="view-reports">
+        <div class="page-hero">
+          <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80&auto=format&fit=crop" alt="Performance analytics graphs on a laptop screen" loading="lazy">
+          <div class="page-hero-text"><h3>Reports &amp; Exports</h3><p>Turn cohort data into decisions</p></div>
+        </div>
+        <div class="section-head"><div><h3>Reports</h3><p>Generate and export reports — API-ready via GET /trainer/reports</p></div></div>
+        <div class="grid-3">
+          <div class="card report-card"><div class="r-ic">✓</div><h4 style="font-size:16px;">Attendance Report</h4><p style="color:var(--text-soft);font-size:13px;">Daily, weekly and monthly attendance breakdown by cohort and department.</p><div class="export-row"><button class="btn btn-sm btn-ghost" onclick="showToast('Exporting PDF…','⇩')">PDF</button><button class="btn btn-sm btn-ghost" onclick="showToast('Exporting Excel…','⇩')">Excel</button><button class="btn btn-sm btn-ghost" onclick="showToast('Exporting CSV…','⇩')">CSV</button></div></div>
+          <div class="card report-card"><div class="r-ic">◫</div><h4 style="font-size:16px;">Workshop Report</h4><p style="color:var(--text-soft);font-size:13px;">Session summaries, turnout and effectiveness ratings.</p><div class="export-row"><button class="btn btn-sm btn-ghost">PDF</button><button class="btn btn-sm btn-ghost">Excel</button><button class="btn btn-sm btn-ghost">CSV</button></div></div>
+          <div class="card report-card"><div class="r-ic">▦</div><h4 style="font-size:16px;">Assessment Report</h4><p style="color:var(--text-soft);font-size:13px;">Score distributions, section accuracy and cohort comparisons.</p><div class="export-row"><button class="btn btn-sm btn-ghost">PDF</button><button class="btn btn-sm btn-ghost">Excel</button><button class="btn btn-sm btn-ghost">CSV</button></div></div>
+          <div class="card report-card"><div class="r-ic">★</div><h4 style="font-size:16px;">Participation Report</h4><p style="color:var(--text-soft);font-size:13px;">Behavioral ratings and engagement trends per student.</p><div class="export-row"><button class="btn btn-sm btn-ghost">PDF</button><button class="btn btn-sm btn-ghost">Excel</button><button class="btn btn-sm btn-ghost">CSV</button></div></div>
+          <div class="card report-card"><div class="r-ic">◍</div><h4 style="font-size:16px;">Student Performance Report</h4><p style="color:var(--text-soft);font-size:13px;">Individual readiness trajectory across all assessments.</p><div class="export-row"><button class="btn btn-sm btn-ghost">PDF</button><button class="btn btn-sm btn-ghost">Excel</button><button class="btn btn-sm btn-ghost">CSV</button></div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================ QUIZ CREATE MODAL ============================================================ -->
+<div class="modal-overlay" id="quizModal">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>Create Assessment</h3><button class="modal-close" onclick="closeModal('quizModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="stepper">
+        <div class="step active" data-step="1"><div class="step-num">1</div><div class="step-label">Details</div></div>
+        <div class="step-line"></div>
+        <div class="step" data-step="2"><div class="step-num">2</div><div class="step-label">Sections</div></div>
+        <div class="step-line"></div>
+        <div class="step" data-step="3"><div class="step-num">3</div><div class="step-label">Questions</div></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="qz-step" id="qzStep1">
+        <div class="field"><input type="text" placeholder=" "><label>Assessment Name</label></div>
+        <div class="row-2">
+          <div class="field select-field"><label>Assessment Type</label><select><option>Baseline Assessment</option><option>Mid Assessment</option><option>Final Assessment</option><option>Custom Assessment</option></select></div>
+          <div class="field select-field"><label>Department</label><select><option>CSE</option><option>ECE</option><option>Mechanical</option><option>Civil</option><option>IT</option><option>All Departments</option></select></div>
+        </div>
+        <div class="field select-field"><label>Applicable Cohort</label><select><option>Cohort A — High Readiness</option><option>Cohort B — Developing</option><option>Cohort C — Needs Support</option><option>All Cohorts</option></select></div>
+        <div class="row-3">
+          <div class="field"><input type="date" placeholder=" " value="2026-07-30"><label>Assessment Date</label></div>
+          <div class="field"><input type="time" placeholder=" " value="10:00"><label>Start Time</label></div>
+          <div class="field"><input type="time" placeholder=" " value="11:30"><label>End Time</label></div>
+        </div>
+        <div class="row-2">
+          <div class="field"><input type="number" placeholder=" " value="90"><label>Duration (minutes)</label></div>
+          <div class="field"><input type="number" placeholder=" " value="40"><label>Passing Criteria (%)</label></div>
+        </div>
+        <div class="field"><textarea placeholder=" "></textarea><label>Instructions</label></div>
+        <div class="field select-field"><label>Status</label><select><option>Draft</option><option>Published</option></select></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="qz-step" id="qzStep2" style="display:none;">
+        <p style="color:var(--text-soft);font-size:13.5px;margin-bottom:16px;">Enter the number of questions for each section. Total is calculated automatically.</p>
+        <div id="sectionCounts"></div>
+        <div class="total-q-banner"><span>Total Questions</span><span id="totalQCount">0</span></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="qz-step" id="qzStep3" style="display:none;">
+        <div class="q-progress" id="qProgressText">Question 1 of 0</div>
+        <div class="q-nav-dots" id="qNavDots"></div>
+        <div id="questionForm"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="qzPrevBtn" onclick="qzPrev()" style="visibility:hidden;">← Previous</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" onclick="showToast('Saved as draft','✓')">Save Draft</button>
+        <button class="btn btn-primary" id="qzNextBtn" onclick="qzNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ WORKSHOP MODAL ============================================================ -->
+<div class="modal-overlay" id="workshopModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Schedule Workshop</h3><button class="modal-close" onclick="closeModal('workshopModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field select-field"><label>Workshop Type</label><select><option>Communication Workshop</option><option>Interview Session</option><option>Coding Session</option><option>Resume Workshop</option><option>GD Practice</option><option>Soft Skill Session</option></select></div>
+      <div class="field"><input type="text" placeholder=" " value="Mock Interview Bootcamp"><label>Workshop Name</label></div>
+      <div class="field"><textarea placeholder=" "></textarea><label>Description</label></div>
+      <div class="row-2">
+        <div class="field select-field"><label>Trainer</label><select><option>Rhea Sharma (You)</option><option>Arjun Mehta</option><option>Priya Nair</option></select></div>
+        <div class="field select-field"><label>Department</label><select><option>CSE</option><option>ECE</option><option>Mechanical</option><option>All Departments</option></select></div>
+      </div>
+      <div class="field select-field"><label>Applicable Cohort</label><select><option>Cohort A</option><option>Cohort B</option><option>Cohort C</option><option>All Cohorts</option></select></div>
+      <div class="row-3">
+        <div class="field"><input type="date" placeholder=" " value="2026-07-28"><label>Date</label></div>
+        <div class="field"><input type="time" placeholder=" " value="14:00"><label>Start Time</label></div>
+        <div class="field"><input type="time" placeholder=" " value="16:00"><label>End Time</label></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><input type="text" placeholder=" " value="Seminar Hall 2"><label>Venue</label></div>
+        <div class="field"><input type="number" placeholder=" " value="60"><label>Maximum Students</label></div>
+      </div>
+      <div class="field"><textarea placeholder=" "></textarea><label>Notes</label></div>
+      <div class="field select-field"><label>Status</label><select><option>Scheduled</option><option>Draft</option></select></div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('workshopModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('workshopModal');showToast('Workshop scheduled — POST /trainer/schedule','✓')">Schedule Workshop</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ASSIGN INTERVENTION MODAL ============================================================ -->
+<div class="modal-overlay" id="interventionModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Assign Intervention</h3><button class="modal-close" onclick="closeModal('interventionModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field select-field"><label>Intervention</label><select><option>Communication Coaching</option><option>Coding Practice</option><option>Aptitude Drill</option><option>Resume Building</option><option>Mock Interview</option><option>Group Discussion</option></select></div>
+      <div class="row-2">
+        <div class="field select-field"><label>Department</label><select><option>CSE</option><option>ECE</option><option>Mechanical</option><option>Civil</option><option>IT</option><option>All Departments</option></select></div>
+        <div class="field select-field"><label>Cohort</label><select><option>Cohort A — High Readiness</option><option>Cohort B — Developing</option><option>Cohort C — Needs Support</option><option>All Cohorts</option></select></div>
+      </div>
+      <div class="field select-field"><label>Assign To</label><select><option>Entire Cohort</option><option>Specific Students</option></select></div>
+      <div class="row-2">
+        <div class="field"><input type="date" placeholder=" " value="2026-07-30"><label>Target Date</label></div>
+        <div class="field select-field"><label>Priority</label><select><option>Medium</option><option>High</option><option>Low</option></select></div>
+      </div>
+      <div class="field"><textarea placeholder=" "></textarea><label>Notes for Trainer / Student</label></div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('interventionModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('interventionModal');showToast('Intervention assigned — POST /trainer/interventions/assign','⚡')">Assign Intervention</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ UPLOAD MATERIALS MODAL ============================================================ -->
+<div class="modal-overlay" id="materialsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Upload Materials</h3><button class="modal-close" onclick="closeModal('materialsModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="dropzone" id="materialsDropzone" onclick="document.getElementById('materialsFileInput').click()">
+        <div class="dz-icon">⇧</div>
+        <div class="dz-title">Drag & drop files here, or click to browse</div>
+        <div class="dz-sub">PDF, PPT, DOCX or video links · Maximum file size 25 MB</div>
+        <input type="file" id="materialsFileInput" multiple onchange="materialsFileSelected(this.files)">
+      </div>
+      <div id="materialsChipWrap"></div>
+      <div class="row-2" style="margin-top:16px;">
+        <div class="field select-field"><label>Linked Session / Intervention</label><select><option>GD Practice — Cohort A</option><option>Interview Session — CSE</option><option>Resume Workshop</option><option>General Resource Library</option></select></div>
+        <div class="field select-field"><label>Visibility</label><select><option>Assigned Students Only</option><option>Entire Cohort</option><option>All My Students</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('materialsModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('materialsModal');showToast('Materials uploaded — POST /trainer/materials','⇧')">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ BULK UPLOAD STUDENTS MODAL ============================================================ -->
+<div class="modal-overlay" id="bulkUploadModal">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>Bulk Upload Students</h3><button class="modal-close" onclick="closeBulkModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="stepper">
+        <div class="step active" data-bstep="1"><div class="step-num">1</div><div class="step-label">Upload File</div></div>
+        <div class="step-line"></div>
+        <div class="step" data-bstep="2"><div class="step-num">2</div><div class="step-label">Preview & Validate</div></div>
+        <div class="step-line"></div>
+        <div class="step" data-bstep="3"><div class="step-num">3</div><div class="step-label">Import</div></div>
+      </div>
+
+      <!-- STEP 1: UPLOAD -->
+      <div class="bulk-step" id="bulkStep1">
+        <div class="dropzone" id="bulkDropzone" onclick="document.getElementById('bulkFileInput').click()">
+          <div class="dz-icon">⇧</div>
+          <div class="dz-title">Drag & drop your file here, or click to browse</div>
+          <div class="dz-sub">Supports CSV and XLSX · Maximum file size 5 MB</div>
+          <input type="file" id="bulkFileInput" accept=".csv,.xlsx" onchange="bulkFileSelected(this.files)">
+        </div>
+        <div id="bulkFileChipWrap"></div>
+        <div class="upload-meta-row">
+          <span>Need the right format? Use our template to avoid validation errors.</span>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleTemplate()">⬇ Download Sample Template</button>
+        </div>
+        <div class="upload-progress-wrap" id="bulkProgressWrap" style="display:none;">
+          <div class="upload-progress-label"><span id="bulkProgressText">Uploading…</span><span id="bulkProgressPct">0%</span></div>
+          <div class="upload-progress-track"><div class="upload-progress-fill" id="bulkProgressFill"></div></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: PREVIEW & VALIDATE -->
+      <div class="bulk-step" id="bulkStep2" style="display:none;">
+        <div class="val-summary" id="bulkValSummary"></div>
+        <div class="table-wrap" style="max-height:320px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>Student Name</th><th>Roll No.</th><th>Department</th><th>Year</th><th>Section</th><th>Status</th><th>Validation</th></tr></thead>
+            <tbody id="bulkPreviewTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STEP 3: IMPORT SUMMARY -->
+      <div class="bulk-step" id="bulkStep3" style="display:none;">
+        <div class="bulk-success">
+          <div class="bs-ic">✓</div>
+          <h3 id="bulkSuccessTitle">Students successfully imported</h3>
+          <p>They now appear in your student roster and are ready for attendance & assessments.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="bulkPrevBtn" onclick="bulkPrev()" style="visibility:hidden;">← Back</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" id="bulkCancelBtn" onclick="closeBulkModal()">Cancel</button>
+        <button class="btn btn-primary" id="bulkNextBtn" onclick="bulkNext()" disabled>Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ============================================================ SAMPLE DATA ============================================================ */
+const depts = ['CSE','ECE','Mechanical','Civil','IT'];
+const cohorts = ['Cohort A','Cohort B','Cohort C'];
+const firstNames = ['Ananya','Rahul','Priya','Arjun','Sneha','Vikram','Divya','Karthik','Meera','Aditya','Pooja','Rohan','Isha','Nikhil','Sanya','Aryan'];
+const lastNames = ['Rao','Sharma','Nair','Mehta','Iyer','Reddy','Kapoor','Singh','Verma','Joshi','Pillai','Gupta'];
+function initials(n){ return n.split(' ').map(w=>w[0]).join('').toUpperCase(); }
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+const students = Array.from({length:42}, (_,i)=>{
+  const name = firstNames[rand(0,firstNames.length-1)]+' '+lastNames[rand(0,lastNames.length-1)];
+  const dept = depts[rand(0,depts.length-1)];
+  return {
+    id:i+1, name, dept,
+    roll: dept.slice(0,3).toUpperCase()+'-'+ (23000+i),
+    cohort: cohorts[rand(0,2)],
+    attendance: rand(65,98),
+    score: rand(40,97),
+    status: rand(0,10) > 1 ? 'Active' : 'At Risk'
+  };
+});
+
+/* ============================================================ NAVIGATION ============================================================ */
+const titles = { dashboard:['Trainer Workspace','Dashboard'], calendar:['Trainer Workspace','Calendar'], students:['Students','All Students'], attendance:['Students','Attendance'], participation:['Students','Participation'], quizzes:['Assessments','Quizzes'], responses:['Assessments','Quiz Responses'], workshops:['Interventions','Workshops'], analytics:['Insights','Analytics'], reports:['Insights','Reports'] };
+
+function switchView(name){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+  const t = titles[name] || ['Trainer Workspace','Dashboard'];
+  document.getElementById('pageEyebrow').textContent = t[0];
+  document.getElementById('pageTitle').textContent = t[1];
+  document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.width = '0'; requestAnimationFrame(()=> b.style.width = b.dataset.w+'%'); });
+  if(window.innerWidth <= 980) closeSidebar();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=> switchView(item.dataset.view));
+});
+
+/* ---- Mobile/tablet hamburger nav ---- */
+const menuToggleBtn = document.getElementById('menuToggle');
+const sidebarEl = document.getElementById('sidebar');
+const sidebarOverlayEl = document.getElementById('sidebarOverlay');
+function openSidebar(){
+  sidebarEl.classList.add('open');
+  sidebarOverlayEl.classList.add('show');
+  menuToggleBtn.classList.add('active');
+  menuToggleBtn.setAttribute('aria-expanded','true');
+  if(window.innerWidth <= 980) document.body.classList.add('nav-open');
+}
+function closeSidebar(){
+  sidebarEl.classList.remove('open');
+  sidebarOverlayEl.classList.remove('show');
+  menuToggleBtn.classList.remove('active');
+  menuToggleBtn.setAttribute('aria-expanded','false');
+  document.body.classList.remove('nav-open');
+}
+menuToggleBtn.addEventListener('click', ()=> sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar());
+sidebarOverlayEl.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && sidebarEl.classList.contains('open')) closeSidebar(); });
+window.addEventListener('resize', ()=>{ if(window.innerWidth > 980) closeSidebar(); });
+
+/* ============================================================ THEME ============================================================ */
+const themeToggle = document.getElementById('themeToggle');
+function setTheme(t){ document.documentElement.setAttribute('data-theme', t); themeToggle.textContent = t==='dark' ? '☀' : '🌙'; }
+setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+themeToggle.addEventListener('click', ()=> setTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark'));
+
+/* ============================================================ TOAST ============================================================ */
+function showToast(msg, ic='✓'){
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div'); t.className='toast';
+  t.innerHTML = `<span class="t-ic">${ic}</span><span>${msg}</span>`;
+  wrap.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, 3200);
+}
+
+/* ============================================================ MODALS ============================================================ */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(ov=> ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); }));
+function openWorkshopModal(){ openModal('workshopModal'); }
+function assignIntervention(){ openModal('interventionModal'); }
+function uploadMaterials(){ openModal('materialsModal'); }
+
+/* ---- Upload Materials: drag & drop + file chips ---- */
+const materialsDropzone = document.getElementById('materialsDropzone');
+['dragenter','dragover'].forEach(evt => materialsDropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); materialsDropzone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(evt => materialsDropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); materialsDropzone.classList.remove('dragover'); }));
+materialsDropzone.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) materialsFileSelected(e.dataTransfer.files); });
+function materialsFileSelected(files){
+  const wrap = document.getElementById('materialsChipWrap');
+  wrap.innerHTML = Array.from(files).map(f=>`<div class="file-chip"><span>📎 ${f.name}</span></div>`).join('');
+}
+
+/* ============================================================ RENDER: STUDENTS TABLE ============================================================ */
+function renderStudents(){
+  const tbody = document.getElementById('studentsTbody');
+  tbody.innerHTML = students.map(s=>`
+    <tr>
+      <td><div class="row-person"><div class="row-avatar">${initials(s.name)}</div><div><div class="row-name">${s.name}</div><div class="row-sub">${s.cohort}</div></div></div></td>
+      <td>${s.roll}</td>
+      <td>${s.dept}</td>
+      <td>${s.cohort}</td>
+      <td>${s.attendance}%</td>
+      <td>${s.score}</td>
+      <td><span class="badge ${s.status==='Active'?'badge-published':'badge-expired'}">${s.status}</span></td>
+      <td class="td-actions"><button class="btn-icon" title="View profile">▤</button></td>
+    </tr>`).join('');
+}
+renderStudents();
+
+/* ============================================================ BULK UPLOAD STUDENTS ============================================================ */
+let bulkStep = 1;
+let bulkSelectedFile = null;
+let bulkRows = [];
+let bulkRetryFn = null;
+let bulkProgressTimer = null;
+
+function openBulkUploadModal(){
+  bulkStep = 1;
+  bulkSelectedFile = null;
+  bulkRows = [];
+  document.getElementById('bulkFileInput').value = '';
+  document.getElementById('bulkFileChipWrap').innerHTML = '';
+  document.getElementById('bulkProgressWrap').style.display = 'none';
+  document.getElementById('bulkProgressFill').style.width = '0%';
+  updateBulkStepperUI();
+  openModal('bulkUploadModal');
+}
+function closeBulkModal(){ if(bulkProgressTimer) clearInterval(bulkProgressTimer); closeModal('bulkUploadModal'); }
+
+/* ---- Drag & drop wiring ---- */
+const bulkDropzone = document.getElementById('bulkDropzone');
+['dragenter','dragover'].forEach(evt => bulkDropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); bulkDropzone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(evt => bulkDropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); bulkDropzone.classList.remove('dragover'); }));
+bulkDropzone.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) bulkFileSelected(e.dataTransfer.files); });
+
+function bulkFileSelected(files){
+  if(!files || !files.length) return;
+  const f = files[0];
+  if(!/\.(csv|xlsx)$/i.test(f.name)){ showToast('Unsupported file type — please upload CSV or XLSX', '✕'); return; }
+  bulkSelectedFile = f;
+  const sizeKb = (f.size/1024).toFixed(1);
+  document.getElementById('bulkFileChipWrap').innerHTML = `
+    <div class="file-chip">
+      <div class="fc-ic">${/\.csv$/i.test(f.name) ? '▤' : '▦'}</div>
+      <div class="fc-info"><div class="fc-name">${f.name}</div><div class="fc-size">${sizeKb} KB</div></div>
+      <button class="fc-remove" onclick="bulkRemoveFile()" title="Remove file">✕</button>
+    </div>`;
+  bulkSimulateUpload();
+}
+function bulkRemoveFile(){
+  if(bulkProgressTimer) clearInterval(bulkProgressTimer);
+  bulkSelectedFile = null;
+  document.getElementById('bulkFileInput').value = '';
+  document.getElementById('bulkFileChipWrap').innerHTML = '';
+  document.getElementById('bulkProgressWrap').style.display = 'none';
+  document.getElementById('bulkNextBtn').disabled = true;
+}
+function bulkSimulateUpload(){
+  const wrap = document.getElementById('bulkProgressWrap'); wrap.style.display = 'block';
+  const fill = document.getElementById('bulkProgressFill');
+  const pctEl = document.getElementById('bulkProgressPct');
+  const textEl = document.getElementById('bulkProgressText');
+  fill.style.width = '0%'; pctEl.textContent = '0%'; textEl.textContent = 'Uploading…';
+  document.getElementById('bulkNextBtn').disabled = true;
+  let pct = 0;
+  if(bulkProgressTimer) clearInterval(bulkProgressTimer);
+  bulkProgressTimer = setInterval(()=>{
+    pct += Math.random()*18 + 8;
+    if(pct >= 100){
+      pct = 100; clearInterval(bulkProgressTimer);
+      textEl.textContent = 'Upload complete';
+      document.getElementById('bulkNextBtn').disabled = false;
+    }
+    fill.style.width = pct+'%'; pctEl.textContent = Math.round(pct)+'%';
+  }, 220);
+}
+
+function downloadSampleTemplate(){
+  const headers = ['Student Name','Roll Number','Register Number','Email','Phone','Department','Year','Section','Batch','Gender'];
+  const sample = ['Ananya Rao','CSE-23001','REG20230012','ananya.rao@example.edu','9876543210','CSE','3','A','2026','Female'];
+  const csv = headers.join(',')+'\n'+sample.join(',')+'\n';
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'student_bulk_upload_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Sample template downloaded', '⬇');
+}
+
+/* Mock parsed rows — structured so a real parser (SheetJS/PapaParse) could later populate this same shape */
+function generateBulkPreviewRows(){
+  const years = ['1','2','3','4'], sections = ['A','B','C'];
+  const rows = Array.from({length:18}, (_,i)=>{
+    const name = firstNames[rand(0,firstNames.length-1)]+' '+lastNames[rand(0,lastNames.length-1)];
+    const dept = depts[rand(0,depts.length-1)];
+    return {
+      name, dept, year: years[rand(0,3)], section: sections[rand(0,2)],
+      roll: dept.slice(0,3).toUpperCase()+'-'+(24000+i),
+      email: `${name.split(' ')[0].toLowerCase()}@example.edu`,
+      phone: '9'+rand(100000000,999999999)
+    };
+  });
+  // deliberately seed a few invalid rows so validation has something to catch
+  rows[2].name = '';
+  rows[5].roll = rows[1].roll;
+  rows[8].email = 'not-an-email';
+  rows[11].dept = '';
+  rows[14].phone = '12345';
+
+  const withIssues = rows.map(r=>{
+    const issues = [];
+    if(!r.name) issues.push('Missing name');
+    if(!r.dept) issues.push('Missing department');
+    if(!/^\S+@\S+\.\S+$/.test(r.email)) issues.push('Invalid email');
+    if(!/^[6-9]\d{9}$/.test(r.phone)) issues.push('Invalid phone');
+    return { ...r, issues };
+  });
+  withIssues.forEach(r=>{
+    const dupCount = withIssues.filter(x=>x.roll===r.roll).length;
+    if(dupCount>1 && !r.issues.includes('Duplicate roll number')) r.issues.push('Duplicate roll number');
+  });
+  return withIssues;
+}
+
+function renderBulkPreview(){
+  bulkRows = generateBulkPreviewRows();
+  document.getElementById('bulkPreviewTbody').innerHTML = bulkRows.map(r=>`
+    <tr class="${r.issues.length ? 'row-invalid' : ''}">
+      <td>${r.name || '<span style="color:var(--rose);">—</span>'}</td>
+      <td>${r.roll}</td>
+      <td>${r.dept || '<span style="color:var(--rose);">—</span>'}</td>
+      <td>${r.year}</td>
+      <td>${r.section}</td>
+      <td><span class="badge ${r.issues.length ? 'badge-expired' : 'badge-published'}">${r.issues.length ? 'Invalid' : 'Valid'}</span></td>
+      <td>${r.issues.length ? `<span class="val-issue">⚠ ${r.issues.join(', ')}</span>` : `<span class="val-ok">✓ All checks passed</span>`}</td>
+    </tr>`).join('');
+
+  const total = bulkRows.length;
+  const invalid = bulkRows.filter(r=>r.issues.length).length;
+  const dup = bulkRows.filter(r=>r.issues.includes('Duplicate roll number')).length;
+  document.getElementById('bulkValSummary').innerHTML = `
+    <div class="val-stat"><strong>${total}</strong><span>Total Records</span></div>
+    <div class="val-stat v-valid"><strong>${total-invalid}</strong><span>Valid</span></div>
+    <div class="val-stat v-invalid"><strong>${invalid}</strong><span>Invalid</span></div>
+    <div class="val-stat v-dup"><strong>${dup}</strong><span>Duplicates</span></div>`;
+}
+
+function updateBulkStepperUI(){
+  document.querySelectorAll('#bulkUploadModal .step').forEach(s=>{
+    const n = parseInt(s.dataset.bstep);
+    s.classList.toggle('active', n===bulkStep);
+    s.classList.toggle('done', n<bulkStep);
+  });
+  document.querySelectorAll('.bulk-step').forEach((el,i)=> el.style.display = (i+1===bulkStep) ? 'block' : 'none');
+
+  const prevBtn = document.getElementById('bulkPrevBtn');
+  const cancelBtn = document.getElementById('bulkCancelBtn');
+  const nextBtn = document.getElementById('bulkNextBtn');
+
+  if(bulkStep===1){
+    prevBtn.style.visibility = 'hidden';
+    cancelBtn.textContent = 'Cancel'; cancelBtn.onclick = closeBulkModal;
+    nextBtn.textContent = 'Next →'; nextBtn.onclick = bulkNext; nextBtn.disabled = !bulkSelectedFile;
+  } else if(bulkStep===2){
+    prevBtn.style.visibility = 'visible';
+    cancelBtn.textContent = 'Cancel'; cancelBtn.onclick = closeBulkModal;
+    nextBtn.textContent = 'Import Students'; nextBtn.onclick = bulkNext; nextBtn.disabled = false;
+  } else {
+    prevBtn.style.visibility = 'hidden';
+    cancelBtn.textContent = 'Upload Another File';
+    cancelBtn.onclick = ()=>{ bulkStep=1; bulkRemoveFile(); updateBulkStepperUI(); };
+    nextBtn.textContent = 'Done'; nextBtn.onclick = closeBulkModal; nextBtn.disabled = false;
+  }
+}
+
+function bulkNext(){
+  if(bulkStep===1){ bulkStep=2; updateBulkStepperUI(); renderBulkPreview(); }
+  else if(bulkStep===2){ bulkPerformImport(); }
+}
+function bulkPrev(){ if(bulkStep>1){ bulkStep--; updateBulkStepperUI(); } }
+
+function bulkPerformImport(){
+  const nextBtn = document.getElementById('bulkNextBtn');
+  nextBtn.disabled = true; nextBtn.textContent = 'Importing…';
+  setTimeout(()=>{
+    const failed = Math.random() < 0.12; // mock ~12% failure rate to exercise the retry path
+    if(failed){
+      nextBtn.disabled = false; nextBtn.textContent = 'Import Students';
+      showErrorToast('Import failed — connection to server timed out.', bulkPerformImport);
+      return;
+    }
+    const validRows = bulkRows.filter(r=>!r.issues.length);
+    validRows.forEach(r=>{
+      students.push({ id: students.length+1, name:r.name, dept:r.dept, roll:r.roll, cohort:cohorts[rand(0,2)], attendance:rand(70,95), score:rand(50,90), status:'Active' });
+    });
+    renderStudents();
+    bulkStep = 3; updateBulkStepperUI();
+    document.getElementById('bulkSuccessTitle').textContent = `${validRows.length} students successfully imported.`;
+    showToast(`${validRows.length} students successfully imported`, '✓');
+  }, 1100);
+}
+
+function showErrorToast(msg, onRetry){
+  bulkRetryFn = onRetry;
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div'); t.className = 'toast toast-error';
+  t.innerHTML = `<span class="t-ic">✕</span><span>${msg}</span><span class="t-retry" onclick="bulkRetryFn && bulkRetryFn(); this.closest('.toast').remove();">Retry</span>`;
+  wrap.appendChild(t);
+  setTimeout(()=>{ if(t.parentNode){ t.style.opacity='0'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); } }, 6000);
+}
+
+/* ============================================================ RENDER: ATTENDANCE ============================================================ */
+const attState = {};
+function renderAttendance(){
+  const tbody = document.getElementById('attTbody');
+  tbody.innerHTML = students.map(s=>`
+    <tr data-id="${s.id}">
+      <td><input type="checkbox" class="att-check" data-id="${s.id}"></td>
+      <td><div class="row-person"><div class="row-avatar">${initials(s.name)}</div><div><div class="row-name">${s.name}</div><div class="row-sub">${s.roll}</div></div></div></td>
+      <td>${s.roll}</td>
+      <td>${s.dept}</td>
+      <td>${s.cohort}</td>
+      <td><div class="att-actions">
+        <button class="att-btn" data-state="present" onclick="markOne(${s.id},'present',this)" title="Present">✓</button>
+        <button class="att-btn" data-state="absent" onclick="markOne(${s.id},'absent',this)" title="Absent">✕</button>
+        <button class="att-btn" data-state="late" onclick="markOne(${s.id},'late',this)" title="Late">◷</button>
+        <button class="att-btn" data-state="excused" onclick="markOne(${s.id},'excused',this)" title="Excused">⌫</button>
+      </div></td>
+    </tr>`).join('');
+  document.querySelectorAll('.att-check').forEach(c=> c.addEventListener('change', updateBulkBar));
+}
+function markOne(id, state, btn){
+  attState[id] = state;
+  const row = btn.closest('tr');
+  row.querySelectorAll('.att-btn').forEach(b=> b.classList.remove('on-present','on-absent','on-late','on-excused'));
+  btn.classList.add('on-'+state);
+}
+function updateBulkBar(){
+  const checked = document.querySelectorAll('.att-check:checked');
+  const bar = document.getElementById('bulkBar');
+  bar.classList.toggle('show', checked.length>0);
+  document.getElementById('bulkCount').textContent = checked.length + ' selected';
+}
+function bulkMark(state){
+  document.querySelectorAll('.att-check:checked').forEach(c=>{
+    const row = c.closest('tr');
+    const btn = row.querySelector(`.att-btn[data-state="${state}"]`);
+    markOne(c.dataset.id, state, btn);
+  });
+  showToast(`Marked ${document.querySelectorAll('.att-check:checked').length} students as ${state}`, '✓');
+}
+document.getElementById('selectAllAtt').addEventListener('change', function(){
+  document.querySelectorAll('.att-check').forEach(c=> c.checked = this.checked);
+  updateBulkBar();
+});
+document.getElementById('attSearch').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#attTbody tr').forEach(r=>{
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+renderAttendance();
+
+/* ============================================================ RENDER: PARTICIPATION LIST ============================================================ */
+function renderParticipation(){
+  const tbody = document.getElementById('partList');
+  tbody.innerHTML = students.slice(0,14).map(s=>`
+    <tr style="cursor:pointer;" onclick="document.getElementById('partSelected').textContent='${s.name} — ${s.roll}'">
+      <td><div class="row-person"><div class="row-avatar">${initials(s.name)}</div><div><div class="row-name">${s.name}</div><div class="row-sub">${s.dept} · ${s.cohort}</div></div></div></td>
+    </tr>`).join('');
+}
+renderParticipation();
+
+/* ============================================================ RENDER: QUIZZES ============================================================ */
+const quizzes = [
+  {name:'Communication Baseline', type:'Baseline', cohort:'Cohort A', q:60, date:'Jul 15, 2026', status:'completed'},
+  {name:'Programming Mid Assessment', type:'Mid', cohort:'Cohort B', q:45, date:'Jul 24, 2026', status:'published'},
+  {name:'Reasoning Final', type:'Final', cohort:'Cohort A', q:70, date:'Aug 05, 2026', status:'draft'},
+  {name:'Professionalism Custom Check', type:'Custom', cohort:'Cohort C', q:20, date:'Jul 18, 2026', status:'expired'},
+  {name:'Interview Readiness Mock', type:'Mid', cohort:'All Cohorts', q:35, date:'Jul 30, 2026', status:'published'},
+];
+function renderQuizzes(){
+  const filter = document.getElementById('quizStatusFilter').value;
+  const tbody = document.getElementById('quizTbody');
+  const rows = quizzes.filter(q => filter==='all' || q.status===filter);
+  tbody.innerHTML = rows.length ? rows.map(q=>`
+    <tr>
+      <td><div class="row-name">${q.name}</div></td>
+      <td>${q.type}</td>
+      <td>${q.cohort}</td>
+      <td>${q.q}</td>
+      <td>${q.date}</td>
+      <td><span class="badge badge-${q.status}">${q.status}</span></td>
+      <td class="td-actions">
+        <button class="btn-icon" title="Preview">◉</button>
+        <button class="btn-icon" title="Edit">✎</button>
+        <button class="btn-icon" title="Duplicate">⧉</button>
+        <button class="btn-icon" title="Delete" onclick="showToast('Quiz deleted','✕')">🗑</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state"><div class="e-ic">▦</div>No assessments match this filter.</div></td></tr>`;
+}
+renderQuizzes();
+
+/* ============================================================ RENDER: LEADERBOARD ============================================================ */
+function renderLeaderboard(){
+  const top = [...students].sort((a,b)=>b.score-a.score).slice(0,6);
+  document.getElementById('leaderboardList').innerHTML = top.map((s,i)=>`
+    <div class="activity-item"><span style="font-family:var(--font-mono);font-weight:700;width:20px;color:var(--text-soft);">#${i+1}</span>
+    <div style="flex:1;"><div class="a-text">${s.name}</div><div class="a-time">${s.roll}</div></div>
+    <span class="badge badge-published">${s.score}</span></div>`).join('');
+}
+renderLeaderboard();
+
+/* ============================================================ RENDER: WORKSHOPS ============================================================ */
+const workshops = [
+  {name:'Communication Workshop', date:'Jul 25, 2026', time:'10:00 – 12:00', venue:'Seminar Hall 1', seats:'48/60', status:'published'},
+  {name:'Mock Interview Bootcamp', date:'Jul 28, 2026', time:'14:00 – 16:00', venue:'Seminar Hall 2', seats:'22/60', status:'draft'},
+  {name:'GD Practice Session', date:'Jul 22, 2026', time:'09:00 – 10:30', venue:'Room 204', seats:'60/60', status:'completed'},
+  {name:'Resume Building Workshop', date:'Jul 30, 2026', time:'11:00 – 13:00', venue:'Auditorium', seats:'40/80', status:'published'},
+  {name:'Soft Skill Session', date:'Aug 02, 2026', time:'15:00 – 17:00', venue:'Room 108', seats:'12/40', status:'draft'},
+  {name:'Coding Session — DSA', date:'Jul 20, 2026', time:'09:00 – 12:00', venue:'Lab 3', seats:'55/55', status:'completed'},
+];
+function renderWorkshops(){
+  document.getElementById('workshopGrid').innerHTML = workshops.map(w=>`
+    <div class="card card-pad">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <h4 style="font-size:15.5px;max-width:75%;">${w.name}</h4>
+        <span class="badge badge-${w.status}">${w.status}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-soft);display:flex;flex-direction:column;gap:4px;margin-bottom:16px;">
+        <span>📅 ${w.date} · ${w.time}</span>
+        <span>📍 ${w.venue}</span>
+        <span>👥 ${w.seats} students enrolled</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm btn-ghost">Edit</button>
+        <button class="btn btn-sm btn-ghost">View</button>
+      </div>
+    </div>`).join('');
+}
+renderWorkshops();
+
+/* ============================================================ RENDER: CALENDAR ============================================================ */
+function renderCalendar(){
+  const grid = document.getElementById('calGrid');
+  const dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const firstDay = new Date(2026,6,1).getDay();
+  const daysInMonth = 31;
+  const events = {5:['type-workshop','GD Practice'], 15:['type-assess','Comm. Baseline'], 22:['type-session','Interview Prep'], 23:['type-session','Today: 4 sessions'], 25:['type-workshop','Comm. Workshop'], 28:['type-workshop','Resume Workshop'], 30:['type-assess','Programming Mid']};
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-cell muted"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const isToday = d===23;
+    const evt = events[d];
+    html += `<div class="cal-cell ${isToday?'today':''}"><div class="cal-daynum">${d}</div>${evt?`<div class="cal-evt ${evt[0]}">${evt[1]}</div>`:''}</div>`;
+  }
+  grid.innerHTML = html;
+}
+renderCalendar();
+
+/* ============================================================ QUIZ CREATION WIZARD ============================================================ */
+const sections = ['Communication','Programming','Reasoning','Professionalism','Interview Readiness'];
+let sectionCounts = {Communication:10, Programming:15, Reasoning:20, Professionalism:10, 'Interview Readiness':15};
+let currentStep = 1;
+let currentQ = 1;
+let totalQ = 0;
+
+function renderSectionCounts(){
+  const wrap = document.getElementById('sectionCounts');
+  wrap.innerHTML = sections.map(s=>`
+    <div class="section-count-row">
+      <span class="sc-label">${s}</span>
+      <div class="stepper-input">
+        <button onclick="stepCount('${s}',-1)">−</button>
+        <input type="number" min="0" value="${sectionCounts[s]}" id="cnt-${s.replace(/\s/g,'')}" onchange="setCount('${s}', this.value)">
+        <button onclick="stepCount('${s}',1)">＋</button>
+      </div>
+    </div>`).join('');
+  updateTotalQ();
+}
+function stepCount(s, delta){ sectionCounts[s] = Math.max(0, sectionCounts[s]+delta); document.getElementById('cnt-'+s.replace(/\s/g,'')).value = sectionCounts[s]; updateTotalQ(); }
+function setCount(s, val){ sectionCounts[s] = Math.max(0, parseInt(val)||0); updateTotalQ(); }
+function updateTotalQ(){ totalQ = Object.values(sectionCounts).reduce((a,b)=>a+b,0); document.getElementById('totalQCount').textContent = totalQ; }
+
+function buildQuestionList(){
+  const list = [];
+  sections.forEach(s=>{ for(let i=0;i<sectionCounts[s];i++) list.push(s); });
+  return list;
+}
+let questionList = [];
+
+function renderQuestionStep(){
+  questionList = buildQuestionList();
+  totalQ = questionList.length;
+  document.getElementById('qProgressText').textContent = `Question ${currentQ} of ${totalQ}`;
+  const dotsWrap = document.getElementById('qNavDots');
+  dotsWrap.innerHTML = questionList.map((s,i)=>`<div class="q-dot ${i+1<currentQ?'done':''} ${i+1===currentQ?'current':''}" onclick="jumpQ(${i+1})">${i+1}</div>`).join('');
+  const cat = questionList[currentQ-1] || sections[0];
+  document.getElementById('questionForm').innerHTML = totalQ ? `
+    <div class="field select-field" style="max-width:200px;"><label>Category</label><select disabled><option>${cat}</option></select></div>
+    <div class="field"><textarea placeholder=" "></textarea><label>Question ${currentQ}</label></div>
+    <div class="row-2">
+      <div class="field"><input type="text" placeholder=" "><label>Option A</label></div>
+      <div class="field"><input type="text" placeholder=" "><label>Option B</label></div>
+      <div class="field"><input type="text" placeholder=" "><label>Option C</label></div>
+      <div class="field"><input type="text" placeholder=" "><label>Option D</label></div>
+    </div>
+    <div class="row-3">
+      <div class="field select-field"><label>Correct Answer</label><select><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+      <div class="field select-field"><label>Difficulty</label><select><option>Easy</option><option>Medium</option><option>Hard</option></select></div>
+      <div class="field"><input type="number" placeholder=" " value="1"><label>Marks</label></div>
+    </div>` : `<div class="empty-state"><div class="e-ic">▦</div>Add section counts on the previous step to generate questions.</div>`;
+}
+function jumpQ(n){ currentQ = n; renderQuestionStep(); }
+
+function updateStepperUI(){
+  document.querySelectorAll('.step').forEach(s=>{
+    const n = parseInt(s.dataset.step);
+    s.classList.toggle('active', n===currentStep);
+    s.classList.toggle('done', n<currentStep);
+  });
+  document.querySelectorAll('.qz-step').forEach((el,i)=> el.style.display = (i+1===currentStep) ? 'block' : 'none');
+  document.getElementById('qzPrevBtn').style.visibility = currentStep===1 ? 'hidden' : 'visible';
+  document.getElementById('qzNextBtn').textContent = currentStep===3 ? 'Publish Quiz' : 'Next →';
+}
+function qzNext(){
+  if(currentStep < 3){ currentStep++; updateStepperUI(); if(currentStep===3){ currentQ=1; renderQuestionStep(); } }
+  else if(currentQ < totalQ && document.getElementById('qzStep3').style.display!=='none' && currentQ < questionList.length){
+    // within question step, advance question if not all answered yet — but keep simple: publish
+    closeModal('quizModal'); showToast('Quiz published — POST /trainer/create-quiz', '✓'); resetWizard();
+  } else {
+    closeModal('quizModal'); showToast('Quiz published — POST /trainer/create-quiz', '✓'); resetWizard();
+  }
+}
+function qzPrev(){
+  if(currentStep===3 && currentQ>1){ currentQ--; renderQuestionStep(); return; }
+  if(currentStep>1){ currentStep--; updateStepperUI(); }
+}
+function resetWizard(){ currentStep=1; currentQ=1; updateStepperUI(); }
+function openQuizModal(){ resetWizard(); renderSectionCounts(); openModal('quizModal'); }
+
+/* next/prev within question list before moving to publish */
+document.getElementById('qzNextBtn').addEventListener('click', function(){}, {once:false});
+// override next behavior for question-by-question navigation
+function qzNextOverride(){
+  if(currentStep===3){
+    if(currentQ < totalQ){ currentQ++; renderQuestionStep(); return; }
+  }
+}
+const originalQzNext = qzNext;
+qzNext = function(){
+  if(currentStep===3 && currentQ < totalQ){ currentQ++; renderQuestionStep(); return; }
+  if(currentStep<3){ currentStep++; updateStepperUI(); if(currentStep===3){ currentQ=1; renderQuestionStep(); } return; }
+  closeModal('quizModal'); showToast('Quiz published — POST /trainer/create-quiz', '✓'); resetWizard();
+};
+
+/* ============================================================ FIELD LABEL HANDLING (selects) ============================================================ */
+document.querySelectorAll('.field select').forEach(sel=>{
+  const lbl = sel.previousElementSibling;
+  if(lbl && lbl.tagName==='LABEL'){ /* handled via CSS sibling selector already for non select-field */ }
+});
+
+/* ============================================================ INIT ============================================================ */
+window.addEventListener('load', ()=>{
+  document.getElementById('loader').classList.add('hidden');
+  document.querySelectorAll('.bar-fill').forEach(b=> setTimeout(()=> b.style.width = b.dataset.w+'%', 200));
+  document.querySelectorAll('.ring-fill').forEach(r=>{
+    const circumference = 2 * Math.PI * 70;
+    const pct = parseFloat(r.dataset.pct) || 0;
+    setTimeout(()=> r.style.strokeDashoffset = circumference * (1 - pct/100), 250);
+  });
+});
+</script>
+</body>
+</html>
